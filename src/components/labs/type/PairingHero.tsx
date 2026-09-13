@@ -24,7 +24,7 @@ function SlotCard({ slot, spec, meta, onChange, large }: { slot: Slot; spec: Fon
           <Pencil className="h-3.5 w-3.5" /> Change
         </Button>
       </div>
-      <FontText family={spec.family} weights={spec.weights} fallback={spec.fallback} className={cn("truncate leading-none tracking-tight", large ? "text-[40px] @4xl:text-[44px]" : "text-[26px] @4xl:text-[30px]")} style={{ fontWeight: slot === "display" ? heaviest : 400 }}>
+      <FontText family={spec.family} weights={spec.weights} fallback={spec.fallback} className={cn("truncate leading-none tracking-tight", large ? "text-[40px] @4xl:text-[44px]" : slot === "mono" ? "text-[22px] @4xl:text-[24px]" : "text-[26px] @4xl:text-[30px]")} style={{ fontWeight: slot === "display" ? heaviest : 400 }}>
         {spec.family}
       </FontText>
       <FontText family={spec.family} weights={spec.weights} fallback={spec.fallback} className={cn("text-fg-muted truncate", large ? "text-[15px]" : "text-[13px]")} style={{ fontWeight: 400 }}>
