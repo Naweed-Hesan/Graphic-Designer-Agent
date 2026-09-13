@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { Send, Square, Trash2, X, Wrench, ChevronDown, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button, Spinner, Badge } from "@/components/ui";
-import { useProject } from "@/lib/store/project";
+import { useProject, assetUrl } from "@/lib/store/project";
 import { useSettings, type AssistantProviderId } from "@/lib/store/settings";
 import { getThread, saveThread, type ChatMessage, type ChatThread } from "@/lib/db";
 import { streamChat } from "@/lib/api";
@@ -273,7 +273,7 @@ function Message({ m }: { m: ChatMessage }) {
         <div className="grid grid-cols-2 gap-1.5">
           {images.map((a) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={a!.id} src={URL.createObjectURL(a!.blob)} alt={a!.name} className="rounded-md border border-line w-full aspect-square object-cover" />
+            <img key={a!.id} src={assetUrl(a)} alt={a!.name} className="rounded-md border border-line w-full aspect-square object-cover" />
           ))}
         </div>
       ) : null}

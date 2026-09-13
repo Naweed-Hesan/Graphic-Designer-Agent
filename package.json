@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.270",
@@ -46,7 +48,17 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.0"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.0",
+  "description": "Open-source, local-first brand identity studio: brief, strategy, logo, color, type, imagery, motion, mockups, guidelines and export from one Brand Genome.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Naweed-Hesan/Graphic-Designer-Agent"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
 }
