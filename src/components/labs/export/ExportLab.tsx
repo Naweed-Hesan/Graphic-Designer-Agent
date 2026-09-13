@@ -37,12 +37,22 @@ function previewsFrom(files: KitFile[]): Record<string, SocialPreview> {
   return out;
 }
 
-/** Builds the full kit in the background whenever the Genome or assets change, so counts, sizes and previews are live. */
+/** What the kit depends on — stage status, history and timestamps are deliberately left out so toggling a stage does not rebuild. */
+function kitFingerprint(genome: Genome | null, assets: Asset[]): string {
+  if (!genome) return "";
+  return JSON.stringify([genome.name, genome.brief, genome.strategy, genome.visual, genome.notes, assets.map((a) => [a.id, a.blob.size, a.stage])]);
+}
+
+/** Builds the full kit in the background whenever the Genome content or assets change, so counts, sizes and previews are live. */
 function useKitBuild(genome: Genome | null, assets: Asset[]) {
   const [state, setState] = React.useState<KitState>(IDLE);
   const [nonce, setNonce] = React.useState(0);
+  const builtKey = React.useRef<string | null>(null);
+  const fingerprint = kitFingerprint(genome, assets);
   React.useEffect(() => {
     if (!genome) return;
+    const key = `${fingerprint}#${nonce}`;
+    if (builtKey.current === key) return;
     let cancelled = false;
     let previews: Record<string, SocialPreview> = {};
     const timer = setTimeout(() => {
@@ -53,6 +63,7 @@ function useKitBuild(genome: Genome | null, assets: Asset[]) {
         .then((files) => {
           if (cancelled) return;
           previews = previewsFrom(files);
+          builtKey.current = key;
           setState({ files, building: false, progress: null, error: null, previews });
         })
         .catch((e) => {
@@ -64,7 +75,7 @@ function useKitBuild(genome: Genome | null, assets: Asset[]) {
       clearTimeout(timer);
       for (const p of Object.values(previews)) URL.revokeObjectURL(p.url);
     };
-  }, [genome, assets, nonce]);
+  }, [genome, assets, fingerprint, nonce]);
   const rebuild = React.useCallback(() => setNonce((n) => n + 1), []);
   return { ...state, rebuild };
 }
@@ -180,15 +191,7 @@ export function ExportLab() {
       <div className="grid gap-6 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
         {/* Kit checklist */}
         <Card>
-          <SectionHeader
-            title="Brand kit"
-            description="Choose what goes into the zip. README.md and genome.json are always included."
-            actions={
-              <Button variant="ghost" size="icon-sm" onClick={kit.rebuild} disabled={kit.building} title="Rebuild the kit">
-                <RefreshCw className={cn("h-4 w-4", kit.building && "animate-[spin_1s_linear_infinite]")} />
-              </Button>
-            }
-          />
+          <SectionHeader title="Brand kit" description="Choose what goes into the zip. README.md and genome.json are always included." />
           {placeholderLogo ? (
             <div className="text-xs text-fg-muted mb-3 flex items-start gap-2">
               <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
@@ -236,9 +239,14 @@ export function ExportLab() {
                 "Preparing…"
               )}
             </div>
-            <Button size="sm" onClick={downloadKit} loading={Boolean(zipping)} title="Download the brand kit zip">
-              <Download className="h-4 w-4" /> Download brand kit (.zip)
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button variant="ghost" size="icon-sm" onClick={kit.rebuild} disabled={kit.building} title="Rebuild the kit" aria-label="Rebuild the kit">
+                <RefreshCw className={cn("h-4 w-4", kit.building && "animate-[spin_1s_linear_infinite]")} />
+              </Button>
+              <Button size="sm" onClick={downloadKit} loading={Boolean(zipping)} title="Download the brand kit zip">
+                <Download className="h-4 w-4" /> Download brand kit (.zip)
+              </Button>
+            </div>
           </div>
           {zipping ? (
             <div className="mt-3">

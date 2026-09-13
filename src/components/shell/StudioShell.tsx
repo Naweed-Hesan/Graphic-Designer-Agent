@@ -148,7 +148,7 @@ export function StudioShell({ projectId, children }: { projectId: string; childr
           </div>
         </header>
         <div className="flex-1 flex min-h-0">
-          <main className="flex-1 min-w-0 overflow-y-auto">
+          <main className="flex-1 min-w-0 overflow-y-auto" data-print-root>
             <div className="mx-auto max-w-6xl px-6 py-6 animate-in" key={stage}>
               {loading || !genome ? (
                 <div className="flex items-center gap-2 text-fg-muted h-64 justify-center">
@@ -170,11 +170,11 @@ export function StudioShell({ projectId, children }: { projectId: string; childr
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       {/* Mobile assistant */}
       {assistantOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-bg flex flex-col">
+        <div className="no-print lg:hidden fixed inset-0 z-40 bg-bg flex flex-col">
           <AssistantPanel stage={stage} onClose={() => setSettings({ assistantOpen: false })} />
         </div>
       )}
-      <button className="lg:hidden fixed bottom-4 right-4 z-30 rounded-full bg-accent text-accent-fg p-3 shadow-card" onClick={() => setSettings({ assistantOpen: true })} aria-label="Open Creative Director">
+      <button className="no-print lg:hidden fixed bottom-4 right-4 z-30 rounded-full bg-accent text-accent-fg p-3 shadow-card" onClick={() => setSettings({ assistantOpen: true })} aria-label="Open Creative Director">
         <MessageSquare className="h-5 w-5" />
       </button>
     </div>

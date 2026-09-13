@@ -50,12 +50,14 @@ export function Slider({ className, ...props }: React.InputHTMLAttributes<HTMLIn
   return <input type="range" className={cn("w-full accent-[var(--accent)] h-1.5 cursor-pointer", className)} {...props} />;
 }
 
-export function Switch({ checked, onChange, label, className }: { checked: boolean; onChange: (v: boolean) => void; label?: string; className?: string }) {
+export function Switch({ checked, onChange, label, className, ariaLabel, title }: { checked: boolean; onChange: (v: boolean) => void; label?: string; className?: string; ariaLabel?: string; title?: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel ?? (label ? undefined : title)}
+      title={title}
       onClick={() => onChange(!checked)}
       className={cn("inline-flex items-center gap-2 text-sm text-fg-muted cursor-pointer", className)}
     >

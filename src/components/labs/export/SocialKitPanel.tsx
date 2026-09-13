@@ -36,10 +36,9 @@ export function SocialKitPanel({ brandSlug, previews, building }: { brandSlug: s
 }
 
 function Tile({ spec, preview, onDownload }: { spec: SocialSpec; preview?: SocialPreview; onDownload: () => void }) {
-  const ratio = spec.width / spec.height;
   return (
     <div className="surface-2 p-2 flex flex-col gap-2 min-w-0">
-      <div className="inset checker overflow-hidden flex items-center justify-center" style={{ aspectRatio: `${spec.width} / ${spec.height}`, maxHeight: ratio > 3 ? 120 : undefined }}>
+      <div className="inset checker overflow-hidden flex items-center justify-center" style={{ aspectRatio: `${spec.width} / ${spec.height}` }}>
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview.url} alt={`${spec.label} preview`} className="w-full h-full object-contain" width={spec.width} height={spec.height} />
