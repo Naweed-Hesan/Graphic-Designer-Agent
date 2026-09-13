@@ -3,10 +3,11 @@
 Ligature is an open-source, local-first brand identity studio (Next.js 16 App Router, React 19, TypeScript, Tailwind v4, Zustand, Dexie/IndexedDB). One document — the **Brand Genome** — drives every stage: brief → strategy → logo → color → type → imagery → motion → mockups → guidelines → export.
 
 ## Commands
-- `pnpm dev` (dev server; in this workspace one is already running on http://localhost:3210)
+- `pnpm dev` (dev server on http://localhost:3000)
 - `pnpm tsc --noEmit` — must pass with zero errors before you finish
 - `pnpm lint` — must pass with zero errors (warnings are acceptable only if unavoidable)
-- `pnpm build` — production build (slow; run when asked)
+- `pnpm build` — production build
+- `pnpm test` — vitest unit/integration tests for the pure libraries; `pnpm test:e2e` — Playwright smoke through every stage
 
 ## Architecture map
 - `src/lib/genome/schema.ts` — zod schema + types (`Genome`, `BrandColor`, `Typography`, `LogoSystem`, `ImageryStyle`, `MotionSystem`, `StageId`…). **Do not change the schema** without a note in your final report; labs must work with the schema as-is.
@@ -36,10 +37,10 @@ Design tokens (Tailwind classes): `bg-bg`, `bg-bg-elev`, `bg-bg-elev-2`, `bg-bg-
 - Every lab is a `"use client"` component that starts with `<PageHeader eyebrow="Stage NN" title=… description=… actions=… />` and reads `useProject()`; render a friendly empty state when the Genome section is empty.
 - Edit the Genome only through `update()`/`applyOps()` with a short `summary` so the history stays readable. Batch rapid slider changes (debounce ~300 ms) so history doesn't flood.
 - Heavy browser libraries (`imagetracerjs`, `@imgly/background-removal`, `mediabunny`, `gifenc`, `opentype.js`, `jszip`) must be loaded with dynamic `import()` inside the handler that needs them.
-- All generation goes through `src/lib/api.ts`; show provider attempts/errors to the user with `toast.error`. The sandbox this is developed in has **no internet**, so external calls fail here — code must degrade gracefully and be testable without network.
+- All generation goes through `src/lib/api.ts`; show provider attempts/errors to the user with `toast.error`. Code must degrade gracefully and be testable without network: every provider call can fail, and the labs must stay useful offline.
 - Accessibility: buttons need labels/titles, inputs need labels, keep focus styles.
 - Keep files focused; put pure logic in `src/lib/<area>/` with no React so it can be unit-tested, and UI in `src/components/labs/<stage>/`.
 - Do not edit shared files (schema, stores, shell, registry, other labs) — list any needed change in your final report instead.
 
-## Verifying UI in this sandbox
-A Chromium build and Playwright are available: `node -e` scripts can `import("/tmp/claude-0/-home-user-Graphic-Designer-Agent/10baa719-aec7-5d14-a9ce-30e12f1780f7/scratchpad/node_modules/playwright/index.mjs")` and launch with `executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"`. Block non-localhost requests with `page.route` so pages settle. Open http://localhost:3210, click "Open the sample project", then navigate to `/studio/<id>/<stage>`. Always screenshot your lab and check the browser console for errors before finishing.
+## Verifying UI
+Run `pnpm test:e2e` (Playwright walks every stage of the sample project offline and fails on console errors). For ad-hoc checks, `playwright` can drive http://localhost:3000: block non-localhost requests with `page.route` when offline, open the dashboard, click "Open the sample project", then navigate to `/studio/<id>/<stage>`. Always screenshot your lab and check the browser console before finishing. If a Chromium build is preinstalled (e.g. under `/opt/pw-browsers`), pass it via `PW_CHROMIUM_PATH`.
