@@ -140,7 +140,8 @@ export function MoodboardTab({ picks, setPicks }: { picks: string[]; setPicks: (
   const swatches = [...palette.map((c) => ({ hex: c.hex, name: c.name })), { hex: "#FFFFFF", name: "White" }, { hex: "#111111", name: "Near black" }];
 
   return (
-    <div className="@container grid gap-5 @4xl:grid-cols-[340px_minmax(0,1fr)] items-start">
+    <div className="@container">
+    <div className="grid gap-5 @4xl:grid-cols-[340px_minmax(0,1fr)] items-start">
       <Card className="flex flex-col gap-3">
         <SectionHeader title="Pick images" description={`${validPicks.length} of ${candidates.length} selected`} className="mb-0" />
         <div className="flex flex-wrap gap-1.5">
@@ -281,6 +282,7 @@ export function MoodboardTab({ picks, setPicks }: { picks: string[]; setPicks: (
           {error && <p className="text-xs text-danger">{error}</p>}
         </Card>
       </div>
+    </div>
     </div>
   );
 }
