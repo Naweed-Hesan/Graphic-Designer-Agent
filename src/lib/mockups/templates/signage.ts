@@ -5,15 +5,19 @@ import { mulberry32 } from "../noise";
 import type { Quad } from "../perspective";
 import type { MockupTemplate } from "../types";
 
+/** Soft pool of light from a fixture: a radial falloff inside a cone, blurred so the edges melt. */
 function lampCone(ctx: Ctx, x: number, headY: number, bottomY: number, spread: number, strength: number): void {
+  const h = bottomY - headY;
   ctx.save();
-  const g = ctx.createLinearGradient(0, headY, 0, bottomY);
+  ctx.filter = `blur(${Math.max(6, spread * 0.12)}px)`;
+  const g = ctx.createRadialGradient(x, headY, 0, x, headY, h * 1.05);
   g.addColorStop(0, `rgba(255, 244, 220, ${strength})`);
+  g.addColorStop(0.45, `rgba(255, 244, 220, ${strength * 0.45})`);
   g.addColorStop(1, "rgba(255, 244, 220, 0)");
   ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.moveTo(x - 14, headY);
-  ctx.lineTo(x + 14, headY);
+  ctx.moveTo(x - 12, headY);
+  ctx.lineTo(x + 12, headY);
   ctx.lineTo(x + spread, bottomY);
   ctx.lineTo(x - spread, bottomY);
   ctx.closePath();
@@ -141,10 +145,11 @@ export const storefront: MockupTemplate = {
     ctx.fillStyle = frame;
     ctx.fillRect(dx, gy + 128, dw, 8);
     glass(dx, gy + 136, dw, gh - 154);
-    // Door handle + push bar.
-    ctx.fillStyle = night ? "#8d939c" : "#b9bec5";
-    fillRoundRect(ctx, dx + 24, gy + 300, 8, 180, 4, night ? "#8d939c" : "#b9bec5");
-    ctx.fillRect(dx + 20, gy + 520, dw - 40, 6);
+    // Door handle and kick plate.
+    const metal = night ? "#8d939c" : "#b9bec5";
+    fillRoundRect(ctx, dx + 26, gy + 230, 8, 150, 4, metal);
+    ctx.fillStyle = alpha(metal, 0.75);
+    ctx.fillRect(dx, gy + gh - 18 - 24, dw, 24);
     // Window vinyl: wordmark.
     const vinyl = pickLogo(scene, "#2d343e", { prefer: "wordmark" });
     drawLogo(ctx, scene, vinyl, rect(gx + 60, gy + 130, 480, 130), { alpha: 0.9, scale: 0.8 });
@@ -183,7 +188,7 @@ export const storefront: MockupTemplate = {
     ctx.fillRect(fx, fy, fw, fh);
     // Lamps.
     for (const lx of [300, 600, 900]) {
-      lampCone(ctx, lx, fy - 2, fy + fh, 150, night ? 0.2 : 0.09);
+      lampCone(ctx, lx, fy - 2, fy + fh + 10, 170, night ? 0.26 : 0.12);
       lampHead(ctx, lx, fy - 8, night ? "#0f1113" : "#1f2226");
     }
 
@@ -333,7 +338,7 @@ export const billboard: MockupTemplate = {
     });
     // Lamps and their light on the face.
     for (const lx of [330, 600, 870]) {
-      lampCone(ctx, lx, by - 20, by + bh, 190, night ? 0.22 : 0.1);
+      lampCone(ctx, lx, by - 20, by + bh + 10, 210, night ? 0.28 : 0.12);
       lampHead(ctx, lx, by - 26, night ? "#0d0f12" : "#1e2126");
     }
     const lg = ctx.createLinearGradient(0, by, 0, by + bh);

@@ -79,10 +79,14 @@ function fitSize(svg: string, longest: number): { width: number; height: number 
   return ratio >= 1 ? { width: longest, height: Math.round(longest / ratio) } : { width: Math.round(longest * ratio), height: longest };
 }
 
-async function pngOf(svg: string, longest: number, background?: string, padding = 0): Promise<Blob> {
+async function pngOf(svg: string, longest: number, background?: string, padding = 0, label = "logo"): Promise<Blob> {
   const { width, height } = fitSize(svg, longest);
-  const canvas = await svgToCanvas(svg, width, height, { background, padding });
-  return canvasToBlob(canvas, "image/png");
+  try {
+    const canvas = await svgToCanvas(svg, width, height, { background, padding });
+    return await canvasToBlob(canvas, "image/png");
+  } catch (e) {
+    throw new Error(`Could not rasterise ${label} at ${longest}px${e instanceof Error && e.message ? ` (${e.message})` : ""}`);
+  }
 }
 
 function uniqueNamer() {
@@ -146,7 +150,7 @@ export async function buildKitFiles(genome: Genome, assets: Asset[], options: Pa
       ["2x", 1024],
       ["4x", 2048],
     ] as const) {
-      files.push(file(`logo/png/${base}@${scale}.png`, await pngOf(v.svg, longest), "logo"));
+      files.push(file(`logo/png/${base}@${scale}.png`, await pngOf(v.svg, longest, undefined, 0, v.label), "logo"));
       tick(`Logo ${v.label} @${scale}`);
     }
   }
@@ -155,16 +159,16 @@ export async function buildKitFiles(genome: Genome, assets: Asset[], options: Pa
   if (favSource) {
     const icoPngs: { size: number; blob: Blob }[] = [];
     for (const size of [16, 32, 48]) {
-      icoPngs.push({ size, blob: await pngOf(favSource.svg, size) });
+      icoPngs.push({ size, blob: await pngOf(favSource.svg, size, undefined, 0, "favicon") });
       tick(`Favicon ${size}px`);
     }
     files.push(file("logo/favicon/favicon.ico", await pngsToIco(icoPngs), "favicon"));
     const bg = paletteColor(genome, "background", "#ffffff");
-    files.push(file("logo/favicon/apple-touch-icon.png", await pngOf(favSource.svg, 180, bg, 18), "favicon"));
+    files.push(file("logo/favicon/apple-touch-icon.png", await pngOf(favSource.svg, 180, bg, 18, "apple-touch-icon"), "favicon"));
     tick("Apple touch icon");
-    files.push(file("logo/favicon/android-chrome-192x192.png", await pngOf(favSource.svg, 192), "favicon"));
+    files.push(file("logo/favicon/android-chrome-192x192.png", await pngOf(favSource.svg, 192, undefined, 0, "android icon"), "favicon"));
     tick("Android icon 192");
-    files.push(file("logo/favicon/android-chrome-512x512.png", await pngOf(favSource.svg, 512), "favicon"));
+    files.push(file("logo/favicon/android-chrome-512x512.png", await pngOf(favSource.svg, 512, undefined, 0, "android icon"), "favicon"));
     tick("Android icon 512");
     files.push(file("logo/favicon/site.webmanifest", siteWebmanifest(genome), "favicon"));
     files.push(

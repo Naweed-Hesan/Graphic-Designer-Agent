@@ -115,7 +115,7 @@ export const toteBag: MockupTemplate = {
     ctx.globalAlpha = 0.92;
     drawImageContainOnSurface(ctx, logo, map, area.w / area.h, { x: 0, y: 0, w: 1, h: 1 }, { scale: o.logoScale, offset: o.logoOffset, mesh: { cols: 14, rows: 12 } });
     ctx.globalAlpha = 1;
-    applyWeave(ctx, 0, top, W, bottom - top, dark ? 0.35 : 0.5);
+    applyWeave(ctx, 0, top, W, bottom - top, dark ? 0.3 : 0.42);
     grainRect(ctx, scene, 0, top, W, bottom - top, 0.8);
     ctx.restore();
 

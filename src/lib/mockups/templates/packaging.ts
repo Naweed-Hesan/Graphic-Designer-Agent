@@ -16,12 +16,15 @@ function cylShade(ctx: Ctx, x0: number, x1: number, strength = 1): CanvasGradien
   return g;
 }
 
-/** Path of a cone slice between two rim ellipses (front halves) — a cup body or sleeve. */
-function bandPath(ctx: Ctx, cx: number, yTop: number, rTop: number, yBot: number, rBot: number, squash: number): void {
+/**
+ * Path of a cone slice between two rim ellipses. The bottom edge is always the front arc; the top edge is
+ * the back arc for a full silhouette (cup body, lid) or the front arc for a band wrapped on a body (sleeve).
+ */
+function bandPath(ctx: Ctx, cx: number, yTop: number, rTop: number, yBot: number, rBot: number, squash: number, topArc: "front" | "back" = "front"): void {
   ctx.beginPath();
-  ctx.ellipse(cx, yTop, rTop, rTop * squash, 0, Math.PI, 0, false); // top: back half arc (left → right over the top)
+  ctx.ellipse(cx, yTop, rTop, rTop * squash, 0, Math.PI, 0, topArc === "front");
   ctx.lineTo(cx + rBot, yBot);
-  ctx.ellipse(cx, yBot, rBot, rBot * squash, 0, 0, Math.PI, false); // bottom front arc (right → left)
+  ctx.ellipse(cx, yBot, rBot, rBot * squash, 0, 0, Math.PI, false);
   ctx.closePath();
 }
 
@@ -55,11 +58,11 @@ export const coffeeCup: MockupTemplate = {
     ctx.restore();
 
     // Body.
-    shadowedFill(ctx, () => bandPath(ctx, cx, rimY + 26, rAt(rimY + 26), botY, botR, squash), cupPaper, [
+    shadowedFill(ctx, () => bandPath(ctx, cx, rimY + 26, rAt(rimY + 26), botY, botR, squash, "back"), cupPaper, [
       { blur: 60, x: 18, y: 30, color: "rgba(20,16,12,0.22)" },
     ]);
     ctx.save();
-    bandPath(ctx, cx, rimY + 26, rAt(rimY + 26), botY, botR, squash);
+    bandPath(ctx, cx, rimY + 26, rAt(rimY + 26), botY, botR, squash, "back");
     ctx.clip();
     ctx.fillStyle = cylShade(ctx, cx - rimR, cx + rimR, 0.9);
     ctx.fillRect(cx - rimR - 2, rimY - 40, rimR * 2 + 4, botY - rimY + 80);
@@ -71,12 +74,33 @@ export const coffeeCup: MockupTemplate = {
     ctx.lineTo(cx + botR + 2, botY + 30);
     ctx.closePath();
     ctx.fill();
+    // Specular streak on the paper.
+    ctx.fillStyle = alpha("#ffffff", 0.22);
+    ctx.beginPath();
+    ctx.moveTo(cx - rimR * 0.5, rimY + 40);
+    ctx.lineTo(cx - rimR * 0.42, rimY + 40);
+    ctx.lineTo(cx - botR * 0.42, botY);
+    ctx.lineTo(cx - botR * 0.5, botY);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
 
-    // Sleeve.
+    // Sleeve: shadow it casts on the cup, then the band itself.
     const sTop = 330, sBot = 600;
     const rsT = rAt(sTop) + 7, rsB = rAt(sBot) + 7;
-    shadowedFill(ctx, () => bandPath(ctx, cx, sTop, rsT, sBot, rsB, squash), sleeve, [{ blur: 14, y: 6, color: "rgba(0,0,0,0.28)" }]);
+    ctx.save();
+    bandPath(ctx, cx, rimY + 26, rAt(rimY + 26), botY, botR, squash, "back");
+    ctx.clip();
+    ctx.filter = "blur(9px)";
+    ctx.fillStyle = "rgba(0,0,0,0.38)";
+    bandPath(ctx, cx, sTop + 16, rsT, sBot + 16, rsB, squash, "front");
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    bandPath(ctx, cx, sTop, rsT, sBot, rsB, squash, "front");
+    ctx.fillStyle = sleeve;
+    ctx.fill();
+    ctx.restore();
     // Logo wrapped on the sleeve.
     const logo = pickLogo(scene, sleeve, { prefer: "primary" });
     const lw = logo instanceof HTMLCanvasElement ? logo.width : logo.naturalWidth || 1;
@@ -89,7 +113,7 @@ export const coffeeCup: MockupTemplate = {
     const midY = (sTop + sBot) / 2 + scene.options.logoOffset.y * (sBot - sTop) * 0.6;
     const m = cylinderMap({ cx, top: midY - bh / 2, bottom: midY + bh / 2, rTop: rAt(midY - bh / 2) + 8, rBottom: rAt(midY + bh / 2) + 8, squash, angle: arc, angleCenter: scene.options.logoOffset.x * 1.2 });
     ctx.save();
-    bandPath(ctx, cx, sTop, rsT, sBot, rsB, squash);
+    bandPath(ctx, cx, sTop, rsT, sBot, rsB, squash, "front");
     ctx.clip();
     drawImageContainOnSurface(ctx, logo, m, (arc * r) / bh, rect(0, 0, 1, 1), { mesh: { cols: 24, rows: 6 } });
     // Sleeve shading over the logo + a soft seam line.
@@ -98,35 +122,26 @@ export const coffeeCup: MockupTemplate = {
     ctx.fillStyle = alpha("#ffffff", 0.14);
     ctx.fillRect(cx - rsT - 4, sTop - 60, rsT * 2 + 8, 1);
     ctx.restore();
-    // Sleeve top thickness (corrugated edge).
+    // Sleeve edges: light corrugated lip on top, darker fold at the bottom.
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(cx, sTop, rsT, rsT * squash, 0, Math.PI, Math.PI * 2, false);
-    ctx.strokeStyle = alpha(lighten(sleeve, 0.35), 0.8);
+    ctx.ellipse(cx, sTop + 1.5, rsT, rsT * squash, 0, 0, Math.PI, false);
+    ctx.strokeStyle = alpha(lighten(sleeve, 0.5), 0.55);
     ctx.lineWidth = 3;
     ctx.stroke();
     ctx.beginPath();
-    ctx.ellipse(cx, sTop, rsT, rsT * squash, 0, 0, Math.PI, false);
-    ctx.strokeStyle = alpha(darken(sleeve, 0.45), 0.7);
+    ctx.ellipse(cx, sBot - 1.5, rsB, rsB * squash, 0, 0, Math.PI, false);
+    ctx.strokeStyle = alpha(darken(sleeve, 0.5), 0.45);
     ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.restore();
-
-    // Cup rim (rolled lip) under the lid.
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(cx, rimY + 26, rAt(rimY + 26) + 2, (rAt(rimY + 26) + 2) * squash, 0, 0, Math.PI, false);
-    ctx.strokeStyle = alpha("#000000", 0.18);
-    ctx.lineWidth = 3;
     ctx.stroke();
     ctx.restore();
 
     // Lid: skirt band, then dome.
     const lidR = rimR + 10;
     const skirtTop = rimY - 4, skirtBot = rimY + 30;
-    shadowedFill(ctx, () => bandPath(ctx, cx, skirtTop, lidR, skirtBot, lidR - 2, squash), lidColor, [{ blur: 10, y: 4, color: "rgba(0,0,0,0.25)" }]);
+    shadowedFill(ctx, () => bandPath(ctx, cx, skirtTop, lidR, skirtBot, lidR - 2, squash, "back"), lidColor, [{ blur: 10, y: 4, color: "rgba(0,0,0,0.25)" }]);
     ctx.save();
-    bandPath(ctx, cx, skirtTop, lidR, skirtBot, lidR - 2, squash);
+    bandPath(ctx, cx, skirtTop, lidR, skirtBot, lidR - 2, squash, "back");
     ctx.clip();
     ctx.fillStyle = cylShade(ctx, cx - lidR, cx + lidR, 1.1);
     ctx.fillRect(cx - lidR, skirtTop - 40, lidR * 2, 120);
@@ -141,8 +156,8 @@ export const coffeeCup: MockupTemplate = {
     ctx.lineWidth = 1.5;
     ctx.stroke();
     // Dome.
-    const domeR = lidR * 0.72;
-    const domeTop = skirtTop - 22;
+    const domeR = lidR * 0.64;
+    const domeTop = skirtTop - 18;
     ctx.beginPath();
     ctx.ellipse(cx, domeTop, domeR, domeR * squash, 0, Math.PI, Math.PI * 2, false);
     ctx.lineTo(cx + domeR, skirtTop);
@@ -167,20 +182,6 @@ export const coffeeCup: MockupTemplate = {
     ctx.fillStyle = alpha("#000000", isDark(lidColor) ? 0.8 : 0.55);
     ctx.fill();
     ctx.restore();
-
-    // Highlight streak on the cup body.
-    ctx.save();
-    bandPath(ctx, cx, rimY + 26, rAt(rimY + 26), botY, botR, squash);
-    ctx.clip();
-    ctx.fillStyle = alpha("#ffffff", 0.22);
-    ctx.beginPath();
-    ctx.moveTo(cx - rimR * 0.5, rimY + 40);
-    ctx.lineTo(cx - rimR * 0.42, rimY + 40);
-    ctx.lineTo(cx - botR * 0.42, botY);
-    ctx.lineTo(cx - botR * 0.5, botY);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
   },
 };
 
@@ -194,7 +195,7 @@ export const packagingBox: MockupTemplate = {
   render(ctx, scene) {
     const { width: W, height: H } = this.size;
     const { table } = backdropWithTable(ctx, scene, W, H, 0.6);
-    const cam: Camera = { cx: W / 2 + 10, cy: H * 0.5, focal: 1500, distance: 1500, rotX: 0.36, rotY: -0.58 };
+    const cam: Camera = { cx: W / 2 + 10, cy: H * 0.5, focal: 3400, distance: 3400, rotX: 0.3, rotY: -0.62, scale: 1.14 };
     const w = 300, h = 380, d = 210;
     const box = brandSurface(scene);
     const P = (x: number, y: number, z: number): Vec3 => ({ x, y, z });

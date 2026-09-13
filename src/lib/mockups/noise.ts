@@ -114,7 +114,7 @@ export function applyPaper(ctx: CanvasRenderingContext2D, x: number, y: number, 
 }
 
 /** Tiny woven-fabric tile (warp/weft lines) for canvas, cotton and lanyards. */
-export function weaveTexture(size = 6, seed = 5): HTMLCanvasElement {
+export function weaveTexture(size = 3, seed = 5): HTMLCanvasElement {
   const key = `w:${size}:${seed}`;
   const hit = cache.get(key);
   if (hit) return hit;
@@ -126,7 +126,7 @@ export function weaveTexture(size = 6, seed = 5): HTMLCanvasElement {
   for (let y = 0; y < 4; y++) {
     for (let x = 0; x < 4; x++) {
       const over = (x + y) % 2 === 0;
-      ctx.fillStyle = over ? `rgba(255,255,255,${0.18 + rnd() * 0.12})` : `rgba(0,0,0,${0.14 + rnd() * 0.12})`;
+      ctx.fillStyle = over ? `rgba(255,255,255,${0.14 + rnd() * 0.1})` : `rgba(0,0,0,${0.1 + rnd() * 0.1})`;
       ctx.fillRect(x * size, y * size, size, size);
       ctx.fillStyle = over ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.10)";
       if (over) ctx.fillRect(x * size, y * size + size - 1, size, 1);

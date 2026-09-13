@@ -284,8 +284,8 @@ export function svgParts(svg: string): { attrs: string; inner: string; viewBox: 
 export function normalizeLogoSvg(svg: string): string {
   const { attrs, inner, viewBox } = svgParts(svg);
   const keep = attrs
-    .replace(/\s(width|height|viewBox|x|y)\s*=\s*"[^"]*"/gi, "")
-    .replace(/\s(width|height|viewBox|x|y)\s*=\s*'[^']*'/gi, "")
+    .replace(/\s(width|height|viewBox|preserveAspectRatio|x|y)\s*=\s*"[^"]*"/gi, "")
+    .replace(/\s(width|height|viewBox|preserveAspectRatio|x|y)\s*=\s*'[^']*'/gi, "")
     .trim();
   const xmlns = /xmlns\s*=/.test(keep) ? "" : ' xmlns="http://www.w3.org/2000/svg"';
   return `<svg${xmlns}${keep ? " " + keep : ""} viewBox="${viewBox.join(" ")}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;

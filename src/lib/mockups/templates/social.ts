@@ -357,7 +357,7 @@ export const socialCover: MockupTemplate = {
     ctx.restore();
     const bInk = isDark(brand) ? "#ffffff" : "#111111";
     const logo = pickLogo(scene, brand, { prefer: "primary" });
-    drawLogo(ctx, scene, logo, rect(cx0 + 60, cy0 + 60, 300, 130), { alignX: "start", scale: 0.95 });
+    drawLogo(ctx, scene, logo, rect(cx0 + 60, cy0 + 36, 300, 106), { alignX: "start", scale: 0.95 });
     if (scene.options.showTagline && scene.text.tagline) {
       const size = fitFontSize(ctx, scene.text.tagline, scene.fonts.display, 400, 470, 44, 22);
       drawParagraph(ctx, scene.text.tagline, cx0 + cw - 60, cy0 + 120 + size * 0.4, { font: font(400, size, scene.fonts.display, true), color: alpha(bInk, 0.92), align: "right", maxWidth: 470, lineHeight: size * 1.1, maxLines: 2 });

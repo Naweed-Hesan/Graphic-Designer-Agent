@@ -113,18 +113,19 @@ export const lanyardBadge: MockupTemplate = {
     // Straps.
     const straps: [Point, Point][] = [
       [{ x: 470, y: -40 }, { x: 588, y: 262 }],
-      [{ x: 730, y: -40 }, { x: 612, y: 262 }],
+      [{ x: 612, y: 262 }, { x: 730, y: -40 }],
     ];
     for (const [a, b] of straps) {
       const dx = b.x - a.x, dy = b.y - a.y;
       const len = Math.hypot(dx, dy);
       const nx = -dy / len, ny = dx / len;
       const w = 36;
+      // Face x runs a → b; face y runs along the normal so the print is not mirrored.
       const q: Quad = [
-        { x: a.x + nx * (w / 2), y: a.y + ny * (w / 2) },
-        { x: b.x + nx * (w / 2), y: b.y + ny * (w / 2) },
-        { x: b.x - nx * (w / 2), y: b.y - ny * (w / 2) },
         { x: a.x - nx * (w / 2), y: a.y - ny * (w / 2) },
+        { x: b.x - nx * (w / 2), y: b.y - ny * (w / 2) },
+        { x: b.x + nx * (w / 2), y: b.y + ny * (w / 2) },
+        { x: a.x + nx * (w / 2), y: a.y + ny * (w / 2) },
       ];
       quadShadow(ctx, q, [{ blur: 18, y: 8, color: "rgba(0,0,0,0.3)" }], darken(brand, 0.3));
       drawFace(ctx, scene, len, w, q, (f, fw, fh) => {

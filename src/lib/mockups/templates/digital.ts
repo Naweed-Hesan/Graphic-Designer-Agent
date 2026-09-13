@@ -267,10 +267,10 @@ export const websiteLaptop: MockupTemplate = {
       drawText(ctx, l, hx, yy, { font: hFont, color: ink, letterSpacing: -hs * 0.015 });
       yy += hs * 1.08;
     }
-    yy += 10;
+    yy -= hs * 1.08;
     const sub = excerpt(scene.text.positioning || scene.genome.brief.description, 150);
-    if (sub) yy = drawParagraph(ctx, sub, hx, yy + 10, { font: font(400, 14, scene.fonts.body), color: muted, maxWidth: colW - 30, lineHeight: 22, maxLines: 3 });
-    yy += 16;
+    if (sub) yy = drawParagraph(ctx, sub, hx, yy + 46, { font: font(400, 14, scene.fonts.body), color: muted, maxWidth: colW - 30, lineHeight: 22, maxLines: 3 });
+    yy += 14;
     const accentBtn = isDark(page) ? c.accent : c.accent;
     fillRoundRect(ctx, hx, yy, 124, 40, 8, accentBtn);
     drawText(ctx, "Shop now", hx + 62, yy + 25, { font: font(600, 13, scene.fonts.body), color: isDark(accentBtn) ? "#ffffff" : "#111111", align: "center" });

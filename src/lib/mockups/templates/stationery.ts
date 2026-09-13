@@ -32,7 +32,7 @@ export const businessCard: MockupTemplate = {
   render(ctx, scene) {
     const { width: W, height: H } = this.size;
     backdropWithTable(ctx, scene, W, H, 0.34);
-    const cam: Camera = { cx: W / 2, cy: H * 0.55, focal: 1500, distance: 1500, rotX: -0.98 };
+    const cam: Camera = { cx: W / 2, cy: H * 0.57, focal: 1500, distance: 1500, rotX: -0.98, scale: 1.34 };
     const cw = 372, ch = 240;
     const paper = lightSurface(scene);
     const brand = brandSurface(scene);
@@ -47,8 +47,8 @@ export const businessCard: MockupTemplate = {
       const logo = pickLogo(scene, brand, { prefer: "mark" });
       drawLogo(f, scene, logo, rect(w * 0.3, h * 0.2, w * 0.4, h * 0.46), { scale: 0.9 });
       if (scene.options.showTagline && scene.text.tagline) {
-        const size = 22;
-        drawText(f, scene.text.tagline, w / 2, h * 0.82, { font: font(400, size, scene.fonts.body), color: alpha(isDark(brand) ? "#ffffff" : "#000000", 0.78), align: "center" });
+        const size = 24;
+        drawText(f, scene.text.tagline, w / 2, h * 0.82, { font: font(400, size, scene.fonts.display, true), color: alpha(isDark(brand) ? "#ffffff" : "#000000", 0.78), align: "center" });
       }
       f.save();
       f.globalCompositeOperation = "soft-light";
@@ -67,10 +67,10 @@ export const businessCard: MockupTemplate = {
       // Rule + contact row.
       f.fillStyle = alpha(ink, 0.14);
       f.fillRect(w * 0.08, h * 0.7, w * 0.84, 1.5);
-      drawText(f, scene.text.name, w * 0.08, h * 0.82, { font: font(600, 21, scene.fonts.body), color: ink });
-      drawText(f, domainOf(scene), w * 0.92, h * 0.82, { font: font(400, 18, scene.fonts.body), color: muted, align: "right" });
-      drawText(f, `hello@${domainOf(scene)}`, w * 0.08, h * 0.9, { font: font(400, 16, scene.fonts.body), color: muted });
-      drawText(f, "+1 (000) 000 0000", w * 0.92, h * 0.9, { font: font(400, 16, scene.fonts.body), color: muted, align: "right" });
+      drawText(f, scene.text.name, w * 0.08, h * 0.82, { font: font(600, 25, scene.fonts.body), color: ink });
+      drawText(f, domainOf(scene), w * 0.92, h * 0.82, { font: font(400, 20, scene.fonts.body), color: muted, align: "right" });
+      drawText(f, `hello@${domainOf(scene)}`, w * 0.08, h * 0.905, { font: font(400, 18, scene.fonts.body), color: muted });
+      drawText(f, "+1 (000) 000 0000", w * 0.92, h * 0.905, { font: font(400, 18, scene.fonts.body), color: muted, align: "right" });
     }, edge, 1.15);
   },
 };
@@ -85,7 +85,7 @@ export const letterhead: MockupTemplate = {
   render(ctx, scene) {
     const { width: W, height: H } = this.size;
     backdropWithTable(ctx, scene, W, H, 0.2);
-    const cam: Camera = { cx: W / 2, cy: H * 0.52, focal: 1700, distance: 1700, rotX: -0.62 };
+    const cam: Camera = { cx: W / 2, cy: H * 0.5, focal: 1700, distance: 1700, rotX: -0.62, scale: 1.08 };
     const paper = lightSurface(scene);
     const brand = brandSurface(scene);
     const ink = inkOn(scene, paper);
