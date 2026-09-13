@@ -132,7 +132,7 @@ export function MockupLab() {
       </div>
 
       <SavedMockups />
-      <PresentationDialog open={presenting} onClose={() => setPresenting(false)} scene={scene} />
+      {presenting && <PresentationDialog open onClose={() => setPresenting(false)} scene={scene} />}
     </div>
   );
 }

@@ -17,7 +17,7 @@ export function SavedMockups() {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
         {saved.map((a) => (
           <figure key={a.id} className="surface overflow-hidden group">
-            <div className="bg-bg-inset" style={{ aspectRatio: a.width && a.height ? `${a.width} / ${a.height}` : "4 / 3" }}>
+            <div className="bg-bg-inset aspect-[4/3] p-2">
               {/* Object URLs from IndexedDB blobs; next/image cannot optimise them. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl(a)} alt={a.name} className="block w-full h-full object-contain" />

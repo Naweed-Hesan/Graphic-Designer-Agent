@@ -5,6 +5,7 @@ import type { Asset } from "@/lib/db";
 import { getLogoVariants, paletteColor, placeholderMarkSvg, placeholderWordmarkSvg, primaryLogo } from "@/lib/logo/assets";
 import { canvasToBlob, svgSize, svgToImage } from "@/lib/raster";
 import { ensureFont, fontStack } from "@/lib/type/fonts";
+import { hexToRgb } from "@/lib/color/contrast";
 import { darken, safeHex } from "./color";
 import { drawText, font as fontStr } from "./draw";
 import { DEFAULT_OPTIONS, type Drawable, type LogoKind, type MockupScene, type MockupTemplate, type SceneColors, type SceneLogos, type SceneOptions } from "./types";
@@ -17,18 +18,47 @@ async function raster(svg: string): Promise<HTMLImageElement> {
   return svgToImage(svg, Math.max(1, Math.round(width * s)), Math.max(1, Math.round(height * s)));
 }
 
-/** One-colour silhouette of any artwork (alpha preserved, colour replaced). */
-export function silhouette(img: Drawable, color: string): HTMLCanvasElement {
+function smoothstep(a: number, b: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * One-colour reproduction of any artwork. Rather than a flat alpha silhouette (which turns a filled
+ * mark with knocked-out details into a solid blob), pixels are mapped by luminance: on dark-ink
+ * artwork the light parts become knockouts; on light artwork (white logos) the mapping inverts.
+ */
+export function monoArtwork(img: Drawable, color: string): HTMLCanvasElement {
   const w = img instanceof HTMLCanvasElement ? img.width : img.naturalWidth || img.width;
   const h = img instanceof HTMLCanvasElement ? img.height : img.naturalHeight || img.height;
   const c = document.createElement("canvas");
   c.width = Math.max(1, w);
   c.height = Math.max(1, h);
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   ctx.drawImage(img, 0, 0);
-  ctx.globalCompositeOperation = "source-in";
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, c.width, c.height);
+  const image = ctx.getImageData(0, 0, c.width, c.height);
+  const d = image.data;
+  // Is the artwork predominantly light (drawn for dark backgrounds)?
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 128) continue;
+    sum += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+    n++;
+  }
+  const lightArt = n > 0 && sum / n > 0.62;
+  const [r, g, b] = hexToRgb(color);
+  for (let i = 0; i < d.length; i += 4) {
+    const a = d[i + 3];
+    if (a === 0) continue;
+    const lum = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+    const ink = lightArt ? smoothstep(0.25, 0.45, lum) : 1 - smoothstep(0.7, 0.9, lum);
+    d[i] = r;
+    d[i + 1] = g;
+    d[i + 2] = b;
+    d[i + 3] = Math.round(a * ink);
+  }
+  ctx.putImageData(image, 0, 0);
   return c;
 }
 
@@ -85,7 +115,7 @@ export async function prepareLogos(genome: Genome, assets: Asset[]): Promise<Sce
       if (kind === "wordmark") return raster(placeholderWordmarkSvg(genome, color));
       return raster(placeholderInitialsSvg(genome, color));
     }
-    return silhouette(base, color);
+    return monoArtwork(base, color);
   };
   const white = "#ffffff";
   const black = "#111111";
@@ -94,12 +124,12 @@ export async function prepareLogos(genome: Genome, assets: Asset[]): Promise<Sce
   const markIsPlaceholder = markSvg === placeholderMarkSvg(genome);
   const wmIsPlaceholder = !variants.wordmark && primaryArt.source !== "wordmark";
   const monoMark = {
-    light: markIsPlaceholder ? await raster(placeholderInitialsSvg(genome, white)) : silhouette(mark, white),
-    dark: markIsPlaceholder ? await raster(placeholderInitialsSvg(genome, black)) : silhouette(mark, black),
+    light: markIsPlaceholder ? await raster(placeholderInitialsSvg(genome, white)) : monoArtwork(mark, white),
+    dark: markIsPlaceholder ? await raster(placeholderInitialsSvg(genome, black)) : monoArtwork(mark, black),
   };
   const monoWordmark = {
-    light: wmIsPlaceholder ? await raster(placeholderWordmarkSvg(genome, white)) : silhouette(wordmark, white),
-    dark: wmIsPlaceholder ? await raster(placeholderWordmarkSvg(genome, black)) : silhouette(wordmark, black),
+    light: wmIsPlaceholder ? await raster(placeholderWordmarkSvg(genome, white)) : monoArtwork(wordmark, white),
+    dark: wmIsPlaceholder ? await raster(placeholderWordmarkSvg(genome, black)) : monoArtwork(wordmark, black),
   };
   return {
     primary,
