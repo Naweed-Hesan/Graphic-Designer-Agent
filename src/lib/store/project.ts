@@ -83,9 +83,12 @@ export const useProject = create<ProjectState>()((set, get) => ({
   },
 
   setStage: (stage, status) => {
-    get().update((g) => {
-      g.stages[stage] = status;
-    });
+    get().update(
+      (g) => {
+        g.stages[stage] = status;
+      },
+      { summary: `${stage[0].toUpperCase()}${stage.slice(1)} marked ${status.replace("-", " ")}`, stage },
+    );
   },
 
   addAsset: async (partial) => {

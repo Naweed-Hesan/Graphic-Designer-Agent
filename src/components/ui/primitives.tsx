@@ -116,7 +116,7 @@ export function Dialog({ open, onClose, title, description, children, className,
   );
 }
 
-export function Chips({ value, onChange, placeholder }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
+export function Chips({ value, onChange, placeholder, id, ariaLabel }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string; id?: string; ariaLabel?: string }) {
   const [draft, setDraft] = React.useState("");
   const commit = () => {
     const v = draft.trim();
@@ -135,10 +135,12 @@ export function Chips({ value, onChange, placeholder }: { value: string[]; onCha
         </span>
       ))}
       <input
+        id={id}
+        aria-label={ariaLabel}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === ",") {
+          if ((e.key === "Enter" && !e.metaKey && !e.ctrlKey) || e.key === ",") {
             e.preventDefault();
             commit();
           } else if (e.key === "Backspace" && !draft && value.length) {
