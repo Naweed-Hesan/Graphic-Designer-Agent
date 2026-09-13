@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, CircleAlert, Copy, Download, Scissors, Shuffle, Star, Trash2, WandSparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Dialog, Field, Progress, Select, Spinner, Switch, Textarea } from "@/components/ui";
@@ -232,19 +233,22 @@ export function Lightbox({ assetId, ids, onClose, onSelect }: { assetId: string 
   const origin = asset ? originOf(asset) : null;
   const pLabel = asset ? purposeLabel(asset) : null;
 
-  return (
+  // Portalled to <body>: the shell's animated content wrapper would otherwise act as
+  // the containing block for this fixed dialog and clip it to the main column.
+  if (!asset) return null;
+  return createPortal(
     <Dialog
-      open={Boolean(asset)}
+      open
       onClose={close}
       wide
       className="max-w-6xl"
-      title={asset?.name}
-      description={asset ? `${asset.width ?? "?"}×${asset.height ?? "?"} px · ${formatBytes(asset.blob.size)} · ${asset.mime.replace("image/", "")}` : undefined}
+      title={asset.name}
+      description={`${asset.width ?? "?"}×${asset.height ?? "?"} px · ${formatBytes(asset.blob.size)} · ${asset.mime.replace("image/", "")}`}
     >
       {asset && (
         <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="relative checker rounded-md border border-line overflow-hidden flex items-center justify-center min-h-[280px] max-h-[68vh]">
-            <AssetImage asset={asset} className="max-h-[68vh] max-w-full object-contain" />
+          <div className="relative checker rounded-md border border-line overflow-hidden flex items-center justify-center min-h-[280px] max-h-[64vh]">
+            <AssetImage asset={asset} className="max-h-[64vh] max-w-full object-contain" />
             {prevId && (
               <Button variant="secondary" size="icon" onClick={() => go(prevId)} title="Previous (←)" className="absolute left-2 top-1/2 -translate-y-1/2">
                 <ChevronLeft className="h-4 w-4" />
@@ -383,6 +387,7 @@ export function Lightbox({ assetId, ids, onClose, onSelect }: { assetId: string 
           </aside>
         </div>
       )}
-    </Dialog>
+    </Dialog>,
+    document.body,
   );
 }

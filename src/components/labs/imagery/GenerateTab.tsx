@@ -167,11 +167,11 @@ export function GenerateTab() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="@container flex flex-col gap-5">
       <ReferenceStrip onOpen={setLightboxId} />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px] items-start">
-        <Card className="flex flex-col gap-4">
+      <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_400px] items-start">
+        <Card className="@container flex flex-col gap-4">
           <SectionHeader title="Brief the model" description="The Genome supplies medium, palette and personality — you supply the subject." className="mb-0" />
 
           <Field label="Subject" hint="what is in the picture">
@@ -186,7 +186,7 @@ export function GenerateTab() {
             <SuggestionChips className="mt-1.5" items={preset.examples} isActive={(s) => s === subject} onPick={(s) => setSubject(s === subject ? "" : s)} />
           </Field>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @lg:grid-cols-2">
             <Field label="Purpose">
               <Select value={purpose} onChange={(e) => setPurpose(e.target.value as ImagePurpose)}>
                 {PURPOSES.map((p) => (
@@ -222,7 +222,7 @@ export function GenerateTab() {
             </Field>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @lg:grid-cols-2">
             <Field label="Count" hint="sequential requests">
               <Segmented ariaLabel="Number of images" value={count} onChange={setCount} options={[1, 2, 3, 4].map((n) => ({ value: n, label: String(n) }))} />
             </Field>
@@ -258,7 +258,7 @@ export function GenerateTab() {
             </Field>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @lg:grid-cols-2">
             <Field label="Provider">
               <Select value={provider} onChange={(e) => setProvider(e.target.value as ProviderChoice)}>
                 {PROVIDER_OPTIONS.map((p) => (
@@ -299,7 +299,7 @@ export function GenerateTab() {
           </div>
         </Card>
 
-        <div className="flex flex-col gap-5 lg:sticky lg:top-6">
+        <div className="flex flex-col gap-5 @4xl:sticky @4xl:top-6">
           <Card className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
               <div className="label">Prompt</div>

@@ -164,6 +164,7 @@ export function buildTimeline(o: TimelineOptions): Timeline {
     partCount: Math.max(1, o.ctx?.partCount ?? 1),
     primary: o.ctx?.primary ?? "#111111",
     accent: o.ctx?.accent ?? o.ctx?.primary ?? "#111111",
+    ember: Boolean(o.ember),
   };
   const at = (t: number): FrameDirectives => {
     const d = o.preset.frame(clamp01(t), ctx);

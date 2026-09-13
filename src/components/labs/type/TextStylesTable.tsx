@@ -35,7 +35,7 @@ function StyleRow({ style, genome, brand, edit }: { style: TypeStyle; genome: Ge
       <td className="p-1.5 min-w-[120px]">
         <Input className={cell} value={style.name} aria-label="Style name" onChange={(e) => patch((s) => void (s.name = e.target.value), `Renamed text style to ${e.target.value}`)} />
       </td>
-      <td className="p-1.5 min-w-[130px]">
+      <td className="p-1.5 min-w-[170px]">
         <Select className={cell} value={style.font} aria-label="Font slot" onChange={(e) => patch((s) => void (s.font = e.target.value as Slot), `${style.name} → ${SLOT_LABEL[e.target.value as Slot]} font`, false)}>
           {SLOTS.map((s) => (
             <option key={s} value={s}>

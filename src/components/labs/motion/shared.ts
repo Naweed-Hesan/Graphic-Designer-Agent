@@ -120,7 +120,8 @@ export function initialSettings(genome: Genome, assets: Asset[]): LogoAnimSettin
     background: defaultBackground(genome),
     padding: 0.14,
     hold: 0.8,
-    ember: false,
+    // The principles often say it outright ("ember accent moves last") — honour that by default.
+    ember: genome.visual.motion.principles.some((p) => /ember|accent[^.]*last/i.test(p)),
   };
 }
 

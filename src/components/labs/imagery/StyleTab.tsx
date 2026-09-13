@@ -159,7 +159,7 @@ export function StyleTab() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="@container flex flex-col gap-5">
       {empty && (
         <EmptyState
           icon={<Sparkles className="h-7 w-7" />}
@@ -177,8 +177,8 @@ export function StyleTab() {
         />
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px] items-start">
-        <Card className="flex flex-col gap-5">
+      <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_400px] items-start">
+        <Card className="@container flex flex-col gap-5">
           <SectionHeader
             title="Imagery style"
             description="Short phrases work best — they are joined into one sentence and injected into every photographic or illustrative prompt."
@@ -202,7 +202,7 @@ export function StyleTab() {
             placeholder="Steam, hands, ceramic, volcanic rock"
             textarea
           />
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @lg:grid-cols-2">
             <Field label="Mood" hint="injected as “mood: …”">
               <Chips value={style.mood} onChange={(v) => setList("mood", v)} placeholder="Add a mood word…" />
               <SuggestionChips className="mt-1.5" items={STYLE_VOCAB.mood} isActive={(s) => style.mood.includes(s)} onPick={(s) => setList("mood", style.mood.includes(s) ? style.mood.filter((x) => x !== s) : [...style.mood, s])} />
@@ -220,7 +220,7 @@ export function StyleTab() {
           </Field>
         </Card>
 
-        <div className="flex flex-col gap-5 lg:sticky lg:top-6">
+        <div className="flex flex-col gap-5 @4xl:sticky @4xl:top-6">
           <Card className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-3">
               <div>

@@ -308,7 +308,7 @@ export function LogoAnimationTab({ genome, settings, patch }: { genome: Genome; 
                 <span className="text-[11px] font-mono text-fg-muted tabular-nums whitespace-nowrap">
                   {KIND_LABEL[job.kind]} · {job.done}/{job.total}
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => abortRef.current?.abort()} title="Cancel export">
+                <Button size="sm" variant="ghost" onClick={() => abortRef.current?.abort()} title="Cancel export" aria-label="Cancel export" data-testid="export-cancel">
                   <X className="h-3.5 w-3.5" /> Cancel
                 </Button>
               </div>
@@ -423,7 +423,7 @@ export function LogoAnimationTab({ genome, settings, patch }: { genome: Genome; 
         </div>
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" role="radiogroup" aria-label="Animation preset" data-testid="preset-gallery">
           {MOTION_PRESETS.map((p) => (
-            <PresetCard key={p.id} preset={p} selected={p.id === preset.id} onSelect={() => selectPreset(p)} prepared={prepared} colors={colors} easingCss={easingCss} background={settings.background} padding={settings.padding} durationBase={durationBase} />
+            <PresetCard key={p.id} preset={p} selected={p.id === preset.id} onSelect={() => selectPreset(p)} prepared={prepared} colors={colors} easingCss={easingCss} background={settings.background} padding={settings.padding} durationBase={durationBase} ember={settings.ember} />
           ))}
         </div>
       </section>

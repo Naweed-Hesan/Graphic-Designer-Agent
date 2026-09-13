@@ -25,10 +25,11 @@ export interface PresetCardProps {
   background: string;
   padding: number;
   durationBase: number;
+  ember: boolean;
 }
 
 /** Preset gallery card with a pre-rendered 20-frame strip that loops on hover / when selected. */
-export function PresetCard({ preset, selected, onSelect, prepared, colors, easingCss, background, padding, durationBase }: PresetCardProps) {
+export function PresetCard({ preset, selected, onSelect, prepared, colors, easingCss, background, padding, durationBase, ember }: PresetCardProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const framesRef = React.useRef<HTMLCanvasElement[]>([]);
   const [ready, setReady] = React.useState(0);
@@ -41,7 +42,7 @@ export function PresetCard({ preset, selected, onSelect, prepared, colors, easin
     if (!prepared) return;
     let cancelled = false;
     const fps = ANIM_FRAMES / duration;
-    const timeline = buildTimeline({ preset, duration, easing: easingCss, fps, hold: HOLD_FRAMES / fps, ctx: { partCount: prepared.partCount, ...colors } });
+    const timeline = buildTimeline({ preset, duration, easing: easingCss, fps, hold: HOLD_FRAMES / fps, ember, ctx: { partCount: prepared.partCount, ...colors } });
     (async () => {
       const out: HTMLCanvasElement[] = [];
       for (let i = 0; i < timeline.frames; i++) {
@@ -59,7 +60,7 @@ export function PresetCard({ preset, selected, onSelect, prepared, colors, easin
     return () => {
       cancelled = true;
     };
-  }, [prepared, preset, easingCss, background, transparent, padding, colors, duration]);
+  }, [prepared, preset, easingCss, background, transparent, padding, colors, duration, ember]);
 
   React.useEffect(() => {
     const canvas = canvasRef.current;

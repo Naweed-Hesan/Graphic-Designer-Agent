@@ -69,6 +69,7 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): Eas
 
 export const EASING_PRESETS: EasingPreset[] = [
   { id: BRAND_EASING_ID, name: "Brand default", css: DEFAULT_EASING_CSS, description: "Brand default from the Genome (visual.motion.easing)" },
+  { id: "ease-out-soft", name: "Ease-out soft", css: DEFAULT_EASING_CSS, description: "Gentle deceleration — the studio default" },
   { id: "ease-out-expo", name: "Ease-out expo", css: "cubic-bezier(0.16, 1, 0.3, 1)", description: "Arrives fast, settles for a long time — the premium default" },
   { id: "ease-out-quart", name: "Ease-out quart", css: "cubic-bezier(0.25, 1, 0.5, 1)", description: "Confident deceleration without drama" },
   { id: "ease-in-out", name: "Ease-in-out", css: "cubic-bezier(0.65, 0, 0.35, 1)", description: "Symmetric: gentle start, gentle finish" },

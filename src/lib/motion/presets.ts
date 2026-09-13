@@ -65,6 +65,8 @@ export interface MotionContext {
   partCount: number;
   primary: string;
   accent: string;
+  /** Whether the accent ember overlay is wanted; presets with a native ember honour it */
+  ember: boolean;
 }
 
 export interface MotionPreset {
@@ -210,7 +212,7 @@ export const MOTION_PRESETS: MotionPreset[] = [
         opacity: e,
         scale: lerp(0.97, 1, e) + 0.04 * pulse,
         glow: { radius: 0.05 + 0.04 * pulse, opacity: 0.65 * pulse, color: ctx.accent },
-        ember: emberAt(t, ctx, 0.45),
+        ember: ctx.ember ? emberAt(t, ctx, 0.45) : undefined,
       };
     },
   },

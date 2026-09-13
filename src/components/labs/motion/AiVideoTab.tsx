@@ -22,9 +22,9 @@ type Provider = NonNullable<VideoGenParams["provider"]>;
 
 const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:3", "3:4"];
 const PROVIDERS: { id: Provider; label: string; note: string }[] = [
-  { id: "auto", label: "Auto — fallback order", note: "Tries providers in the order set under Providers → Video; unconfigured ones are skipped." },
+  { id: "auto", label: "Auto", note: "Tries providers in the order set under Providers → Video; unconfigured ones are skipped." },
   { id: "pollinations", label: "Pollinations", note: "Free text- and image-to-video with an enter.pollinations.ai key (weekly Pollen budget). Short clips, fastest turnaround." },
-  { id: "hf-space", label: "Hugging Face Space", note: "Free ZeroGPU queue running LTX-2 / Wan. Slow — expect minutes; an HF token raises the quota." },
+  { id: "hf-space", label: "HF Space", note: "Free ZeroGPU queue running LTX-2 / Wan. Slow — expect minutes; an HF token raises the quota." },
 ];
 
 function subjectFor(genome: Genome): string {
