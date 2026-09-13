@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui";
 import { assetUrl, useProject } from "@/lib/store/project";
 import type { Asset } from "@/lib/db";
 import { cn } from "@/lib/utils";
-import { type AttemptInfo, ORIGIN_TAGS, formatMs, purposeFromTags } from "@/lib/imagery/generation";
+import { type AttemptInfo, ORIGIN_TAGS, attemptErrorText, formatMs, purposeFromTags } from "@/lib/imagery/generation";
 import { PURPOSE_BY_ID } from "@/lib/imagery/presets";
 
 const EMPTY_IDS: string[] = [];
@@ -142,7 +142,7 @@ export function AttemptList({ attempts, className }: { attempts: AttemptInfo[]; 
         <li key={`${a.provider}-${i}`} className="flex items-start gap-2 text-xs min-w-0">
           {a.ok ? <Check className="h-3.5 w-3.5 text-success shrink-0 mt-px" /> : <CircleAlert className="h-3.5 w-3.5 text-danger shrink-0 mt-px" />}
           <span className="font-mono text-fg shrink-0">{a.provider}</span>
-          <span className="text-fg-muted break-words min-w-0">{a.ok ? "ok" : a.error}</span>
+          <span className="text-fg-muted break-words min-w-0">{a.ok ? "ok" : attemptErrorText(a)}</span>
           {a.ms != null ? <span className="ml-auto text-fg-subtle font-mono shrink-0">{formatMs(a.ms)}</span> : null}
         </li>
       ))}

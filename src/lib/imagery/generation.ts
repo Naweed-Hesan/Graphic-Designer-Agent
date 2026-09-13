@@ -60,13 +60,20 @@ export function formatMs(ms: number): string {
   return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
 }
 
+/** Server-side ProviderError messages already start with "<provider>: " — drop it for display. */
+export function attemptErrorText(a: AttemptInfo): string {
+  const err = a.error ?? "unknown error";
+  const prefix = `${a.provider}:`;
+  return err.startsWith(prefix) ? err.slice(prefix.length).trim() : err;
+}
+
 /** Turns an attempt list into "pollinations failed: … → trying cloudflare" lines. */
 export function narrateAttempts(attempts: AttemptInfo[]): string[] {
   return attempts.map((a, i) => {
     const next = attempts[i + 1];
     if (a.ok) return `${a.provider} succeeded${a.ms != null ? ` in ${formatMs(a.ms)}` : ""}`;
     const tail = next ? ` → trying ${next.provider}` : "";
-    return `${a.provider} failed: ${a.error ?? "unknown error"}${tail}`;
+    return `${a.provider} failed: ${attemptErrorText(a)}${tail}`;
   });
 }
 
