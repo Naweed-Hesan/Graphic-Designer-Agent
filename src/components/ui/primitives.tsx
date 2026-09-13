@@ -2,6 +2,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { createPortal } from "react-dom";
 
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
@@ -96,8 +97,8 @@ export function Dialog({ open, onClose, title, description, children, className,
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
-  if (!open) return null;
-  return (
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in" onClick={onClose} />
       <div className={cn("relative surface shadow-card w-full max-h-[90vh] overflow-y-auto animate-in", wide ? "max-w-4xl" : "max-w-lg", className)}>
@@ -112,7 +113,8 @@ export function Dialog({ open, onClose, title, description, children, className,
         </div>
         <div className="px-5 pb-5 pt-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
