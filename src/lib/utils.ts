@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { nanoid } from "nanoid";
@@ -112,4 +113,13 @@ export function safeJsonParse<T>(s: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+/** True only after hydration; use to defer rendering of localStorage-derived UI. */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 }
