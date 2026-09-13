@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────
+   Ligature design tokens
+   Dark studio theme by default; `html.light` flips to light.
+   All colors are OKLCH so tints stay perceptually even.
+   ─────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+  --bg: oklch(0.155 0.008 260);
+  --bg-elev: oklch(0.19 0.009 260);
+  --bg-elev-2: oklch(0.225 0.01 260);
+  --bg-inset: oklch(0.13 0.008 260);
+  --fg: oklch(0.95 0.005 260);
+  --fg-muted: oklch(0.72 0.012 260);
+  --fg-subtle: oklch(0.55 0.012 260);
+  --line: oklch(0.30 0.01 260);
+  --line-strong: oklch(0.40 0.012 260);
+  --accent: oklch(0.72 0.19 38);
+  --accent-fg: oklch(0.14 0.02 38);
+  --accent-soft: oklch(0.72 0.19 38 / 0.14);
+  --info: oklch(0.72 0.14 240);
+  --success: oklch(0.74 0.16 150);
+  --warning: oklch(0.80 0.16 80);
+  --danger: oklch(0.66 0.2 25);
+  --ring: oklch(0.72 0.19 38 / 0.55);
+  --shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 8px 24px -12px oklch(0 0 0 / 0.6);
+  --radius: 10px;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html.light {
+  color-scheme: light;
+  --bg: oklch(0.985 0.003 80);
+  --bg-elev: oklch(1 0 0);
+  --bg-elev-2: oklch(0.965 0.004 80);
+  --bg-inset: oklch(0.955 0.004 80);
+  --fg: oklch(0.2 0.01 260);
+  --fg-muted: oklch(0.45 0.012 260);
+  --fg-subtle: oklch(0.6 0.01 260);
+  --line: oklch(0.9 0.005 80);
+  --line-strong: oklch(0.82 0.006 80);
+  --accent: oklch(0.62 0.2 38);
+  --accent-fg: oklch(0.99 0 0);
+  --accent-soft: oklch(0.62 0.2 38 / 0.12);
+  --ring: oklch(0.62 0.2 38 / 0.45);
+  --shadow: 0 1px 2px oklch(0 0 0 / 0.06), 0 8px 24px -12px oklch(0 0 0 / 0.18);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-bg-elev-2: var(--bg-elev-2);
+  --color-bg-inset: var(--bg-inset);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 10px);
+  --shadow-card: var(--shadow);
+}
+
+@layer base {
+  * { border-color: var(--line); }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01", "liga", "calt";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--accent-soft); }
+  input, textarea, select, button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  h1, h2, h3 { letter-spacing: -0.01em; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; border: 3px solid var(--bg); }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer components {
+  .surface { background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+  .surface-2 { background: var(--bg-elev-2); border: 1px solid var(--line); border-radius: var(--radius-md); }
+  .inset { background: var(--bg-inset); border: 1px solid var(--line); border-radius: var(--radius-md); }
+  .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-subtle); font-weight: 600; }
+  .prose-sm p { margin: 0.35em 0; }
+  .prose-sm ul { list-style: disc; padding-left: 1.2em; margin: 0.35em 0; }
+  .prose-sm ol { list-style: decimal; padding-left: 1.2em; margin: 0.35em 0; }
+  .prose-sm h1, .prose-sm h2, .prose-sm h3 { font-weight: 600; margin: 0.6em 0 0.25em; }
+  .prose-sm code { font-family: var(--font-mono); font-size: 0.85em; background: var(--bg-inset); padding: 0.1em 0.35em; border-radius: 4px; }
+  .prose-sm pre { background: var(--bg-inset); padding: 0.6em 0.8em; border-radius: 8px; overflow-x: auto; margin: 0.4em 0; }
+  .prose-sm pre code { background: none; padding: 0; }
+  .prose-sm strong { font-weight: 600; }
+  .prose-sm a { color: var(--accent); text-decoration: underline; }
+  .checker {
+    background-color: #fff;
+    background-image:
+      linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
+      linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+  .grid-dots {
+    background-image: radial-gradient(var(--line-strong) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .animate-in { animation: fade-in 0.25s ease-out both; }
+  .shimmer {
+    background: linear-gradient(90deg, var(--bg-elev-2) 25%, var(--bg-inset) 50%, var(--bg-elev-2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+}
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media print {
+  html, body { background: #fff !important; color: #111 !important; }
+  .no-print { display: none !important; }
+}
