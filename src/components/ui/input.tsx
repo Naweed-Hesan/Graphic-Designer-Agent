@@ -37,10 +37,14 @@ export function Label({ className, children, hint, ...props }: React.LabelHTMLAt
   );
 }
 
-export function Field({ label, hint, children, className }: { label: React.ReactNode; hint?: string; children: React.ReactNode; className?: string }) {
+export function Field({ label, hint, children, className, htmlFor }: { label: React.ReactNode; hint?: string; children: React.ReactNode; className?: string; htmlFor?: string }) {
+  // Associate the label with the first child that carries an id, unless told otherwise.
+  const childId = React.Children.toArray(children).map((c) => (React.isValidElement<{ id?: string }>(c) ? c.props.id : undefined)).find(Boolean);
   return (
     <div className={cn("flex flex-col", className)}>
-      <Label hint={hint}>{label}</Label>
+      <Label hint={hint} htmlFor={htmlFor ?? childId}>
+        {label}
+      </Label>
       {children}
     </div>
   );
