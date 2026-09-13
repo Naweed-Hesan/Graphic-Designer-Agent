@@ -16,6 +16,14 @@ One Brand Genome. Every stage of identity design — brief, strategy, logo, colo
 
 ---
 
+## A look inside
+
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Color lab](docs/screenshots/color-lab.png) |
+| ![Logo lab](docs/screenshots/logo-lab.png) | ![Motion lab](docs/screenshots/motion-lab.png) |
+| ![Mockups lab](docs/screenshots/mockups-lab.png) | ![Guidelines](docs/screenshots/guidelines-lab.png) |
+
 ## Why
 
 Designing a brand identity today means juggling ten tools: a doc for the brief, a slide deck for strategy, an image model for exploration, a vectoriser, a palette site, a font-pairing site, a contrast checker, a mockup marketplace, a video tool, and a guidelines builder — none of which know about each other. The brand drifts between them.
