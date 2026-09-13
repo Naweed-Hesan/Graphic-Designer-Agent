@@ -140,7 +140,7 @@ export function MoodboardTab({ picks, setPicks }: { picks: string[]; setPicks: (
   const swatches = [...palette.map((c) => ({ hex: c.hex, name: c.name })), { hex: "#FFFFFF", name: "White" }, { hex: "#111111", name: "Near black" }];
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)] items-start">
+    <div className="@container grid gap-5 @4xl:grid-cols-[340px_minmax(0,1fr)] items-start">
       <Card className="flex flex-col gap-3">
         <SectionHeader title="Pick images" description={`${validPicks.length} of ${candidates.length} selected`} className="mb-0" />
         <div className="flex flex-wrap gap-1.5">
@@ -155,7 +155,7 @@ export function MoodboardTab({ picks, setPicks }: { picks: string[]; setPicks: (
           </Button>
         </div>
         {candidates.length ? (
-          <div className="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto pr-1" data-testid="moodboard-picker">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] gap-2 max-h-[60vh] overflow-y-auto pr-1" data-testid="moodboard-picker">
             {candidates.map((a) => {
               const on = validPicks.includes(a.id);
               return (
@@ -184,9 +184,9 @@ export function MoodboardTab({ picks, setPicks }: { picks: string[]; setPicks: (
       </Card>
 
       <div className="flex flex-col gap-5">
-        <Card className="flex flex-col gap-4">
+        <Card className="@container flex flex-col gap-4">
           <SectionHeader title="Arrange" description="Equal columns, aspect preserved, shortest column fills first." className="mb-0" />
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 @md:grid-cols-2 @xl:grid-cols-3">
             <Field label="Columns">
               <Segmented ariaLabel="Columns" value={columns} onChange={setColumns} options={[2, 3, 4].map((n) => ({ value: n, label: String(n) }))} />
             </Field>
@@ -197,7 +197,7 @@ export function MoodboardTab({ picks, setPicks }: { picks: string[]; setPicks: (
               <Slider min={0} max={32} step={2} value={radius} onChange={(e) => setRadius(Number(e.target.value))} className="mt-3" aria-label="Corner radius" />
             </Field>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 @md:grid-cols-2 @xl:grid-cols-3">
             <Field label="Width">
               <Select value={width} onChange={(e) => setWidth(Number(e.target.value))} aria-label="Width">
                 {[1200, 1600, 2000, 2400].map((w) => (
@@ -216,8 +216,8 @@ export function MoodboardTab({ picks, setPicks }: { picks: string[]; setPicks: (
                 value={fontChoice}
                 onChange={setFontChoice}
                 options={[
-                  { value: "display", label: <span className="truncate max-w-28">{genome.visual.typography.display.family}</span>, title: "Display face" },
-                  { value: "body", label: <span className="truncate max-w-28">{genome.visual.typography.body.family}</span>, title: "Body face" },
+                  { value: "display", label: <span className="truncate max-w-36">{genome.visual.typography.display.family}</span>, title: "Display face" },
+                  { value: "body", label: <span className="truncate max-w-36">{genome.visual.typography.body.family}</span>, title: "Body face" },
                 ]}
               />
             </Field>

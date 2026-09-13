@@ -120,13 +120,14 @@ export function SuggestionChips({
             type="button"
             onClick={() => onPick(s)}
             aria-pressed={active}
+            title={s}
             className={cn(
-              "inline-flex items-center rounded-full border px-2 h-6 text-[11px] leading-none transition-colors cursor-pointer",
+              "inline-flex items-center max-w-full min-w-0 rounded-full border px-2 h-6 text-[11px] leading-none transition-colors cursor-pointer",
               active ? "border-accent/60 bg-accent-soft text-fg" : "border-line text-fg-muted hover:text-fg hover:border-line-strong",
             )}
           >
-            {active ? <Check className="h-3 w-3 mr-1" /> : null}
-            {s}
+            {active ? <Check className="h-3 w-3 mr-1 shrink-0" /> : null}
+            <span className="truncate">{s}</span>
           </button>
         );
       })}

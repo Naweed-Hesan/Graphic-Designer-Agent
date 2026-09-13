@@ -65,7 +65,6 @@ function fontFor(genome: Genome, role: "display" | "body" | "mono", weight: numb
 /** Ask the browser for the brand fonts before drawing; never blocks for long. */
 export async function loadBrandFonts(genome: Genome): Promise<void> {
   if (typeof document === "undefined" || !("fonts" in document)) return;
-  const t = genome.visual.typography;
   const loads = [document.fonts.load(fontFor(genome, "display", 600, 48)), document.fonts.load(fontFor(genome, "display", 400, 48)), document.fonts.load(fontFor(genome, "body", 400, 24))];
   try {
     await Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, 1500))]);
