@@ -18,6 +18,14 @@ export interface ImageGenParams {
 
 export interface Attempt { provider: string; ok: boolean; error?: string; ms: number }
 
+/** Thrown by generation helpers; carries the structured provider attempt list. */
+export class GenerationError extends Error {
+  constructor(message: string, public attempts: Attempt[] = []) {
+    super(message);
+    this.name = "GenerationError";
+  }
+}
+
 export async function generateImage(params: ImageGenParams, signal?: AbortSignal): Promise<{ image: GeneratedImage; attempts: Attempt[] }> {
   const res = await fetch("/api/generate/image", {
     method: "POST",
@@ -29,7 +37,7 @@ export async function generateImage(params: ImageGenParams, signal?: AbortSignal
   if (!res.ok) {
     const attempts: Attempt[] = json.attempts ?? [];
     const detail = attempts.map((a) => `${a.provider}: ${a.error ?? "ok"}`).join(" · ");
-    throw new Error(json.error ? `${json.error}${detail ? ` — ${detail}` : ""}` : "Image generation failed");
+    throw new GenerationError(json.error ? `${json.error}${detail ? ` — ${detail}` : ""}` : "Image generation failed", attempts);
   }
   return json;
 }
@@ -57,7 +65,7 @@ export async function generateVideo(params: VideoGenParams, onStatus?: (msg: str
     const o = line as { type: string; message?: string; video?: GeneratedVideo; attempts?: Attempt[] };
     if (o.type === "status" && o.message) onStatus?.(o.message);
     else if (o.type === "result" && o.video) result = { video: o.video, attempts: o.attempts ?? [] };
-    else if (o.type === "error") throw new Error(`${o.message}${o.attempts ? " — " + o.attempts.map((a) => `${a.provider}: ${a.error}`).join(" · ") : ""}`);
+    else if (o.type === "error") throw new GenerationError(`${o.message}${o.attempts ? " — " + o.attempts.map((a) => `${a.provider}: ${a.error}`).join(" · ") : ""}`, o.attempts ?? []);
   });
   if (!result) throw new Error("No video returned");
   return result;
