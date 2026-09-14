@@ -4,7 +4,7 @@
  */
 import { z } from "zod";
 import { Genome as GenomeSchema, type Genome, BrandColor, ColorRole, StageId, StageStatus, HEX } from "@/lib/genome/schema";
-import { applyOperations } from "@/lib/genome/paths";
+import { applyOperations, isSafePath } from "@/lib/genome/paths";
 import { compilePrompt, aspectToSize, type ImagePurpose } from "@/lib/imagery/prompt-compiler";
 import { contrastReport } from "@/lib/color/contrast";
 import { generateImageWithFallback } from "@/lib/providers/image";
@@ -73,6 +73,8 @@ export const TOOLS: ToolDef[] = [
     run: async ({ operations, summary }, ctx) => {
       const blocked = operations.find((o) => /^(id|createdAt|schemaVersion|history)$/.test(o.path.split(".")[0]));
       if (blocked) return `Rejected: ${blocked.path} is read-only.`;
+      const unsafe = operations.find((o) => !isSafePath(o.path));
+      if (unsafe) return `Rejected: "${unsafe.path}" is not a valid Genome path.`;
       const ops = operations.map((o) => ({ path: o.path, value: o.value }));
       const next = applyOperations(ctx.genome, ops);
       return commit(ctx, next, ops, summary);
@@ -163,6 +165,7 @@ export const TOOLS: ToolDef[] = [
       const names: string[] = [];
       const errors: string[] = [];
       for (let i = 0; i < count; i++) {
+        if (ctx.signal?.aborted) break;
         ctx.emit({ type: "status", message: `Generating image ${i + 1}/${count}…` });
         const r = await generateImageWithFallback({ prompt: compiled.prompt, negativePrompt: compiled.negativePrompt, width, height, purpose }, ctx.settings, "auto", ctx.signal);
         if (r.image) {
@@ -210,7 +213,7 @@ export const TOOLS: ToolDef[] = [
 export const TOOL_BY_NAME = Object.fromEntries(TOOLS.map((t) => [t.name, t])) as Record<string, ToolDef>;
 
 export function toolJsonSchema(t: ToolDef): Record<string, unknown> {
-  return z.toJSONSchema(z.object(t.shape), { target: "draft-7", unrepresentable: "any" }) as Record<string, unknown>;
+  return z.toJSONSchema(z.object(t.shape), { target: "draft-7", unrepresentable: "any", io: "input" }) as Record<string, unknown>;
 }
 
 export async function runTool(name: string, rawArgs: unknown, ctx: ToolContext, id: string): Promise<string> {

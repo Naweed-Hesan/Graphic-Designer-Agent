@@ -9,7 +9,8 @@ import { STAGES } from "@/lib/genome/stages";
 import type { Genome } from "@/lib/genome/schema";
 import type { Asset } from "@/lib/db";
 import { exportProjectBundle } from "@/lib/export/bundle";
-import { buildKitFiles, DEFAULT_KIT_OPTIONS, filterKitFiles, KIT_GROUPS, kitFilename, summarizeKit, zipKitFiles, type KitFile, type KitGroupId, type KitProgress } from "@/lib/export/kit";
+import { primaryLogo } from "@/lib/logo/assets";
+import { buildKitFiles, DEFAULT_KIT_OPTIONS, filterKitFiles, KIT_GROUPS, kitFilename, readmeFor, summarizeKit, zipKitFiles, type KitFile, type KitGroupId, type KitProgress } from "@/lib/export/kit";
 import { developerReadme, identitySummary } from "@/lib/export/handoff";
 import { SOCIAL_SPECS } from "@/lib/export/social";
 import { cn, downloadBlob, formatBytes, slugify } from "@/lib/utils";
@@ -115,7 +116,11 @@ export function ExportLab() {
         files = await buildKitFiles(genome, assets, { include }, setZipping);
       }
       setZipping({ phase: "zip", percent: 0, label: "Packing" });
-      const blob = await zipKitFiles(filterKitFiles(files, { include }), setZipping);
+      // The README must describe the groups actually being packed, not the full build.
+      const previousReadme = files.find((f) => f.path === "README.md");
+      const placeholderLogo = primaryLogo(genome, assets).source === "placeholder";
+      const selected = filterKitFiles(files, { include }).filter((f) => f.path !== "README.md");
+      const blob = await zipKitFiles([readmeFor(genome, files, include, placeholderLogo, previousReadme?.notes ?? []), ...selected], setZipping);
       downloadBlob(blob, kitFilename(genome));
       toast.success(`Brand kit downloaded · ${formatBytes(blob.size)}`);
     } catch (e) {

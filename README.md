@@ -94,7 +94,7 @@ src/
   lib/imagery/       Prompt Compiler
   lib/color|type|logo|motion|mockups|guidelines|export
                      Pure, testable domain logic for each lab
-  app/api/           Route handlers: generate/image, generate/video, ai/chat (NDJSON stream), fonts, proxy
+  app/api/           Route handlers: generate/image, generate/video, ai/chat (NDJSON stream), fonts, providers/models
   components/labs/   One folder per stage, code-split
   components/shell/  Dashboard, studio shell, settings
   components/assistant/  Streaming chat with tool cards and live Genome patches

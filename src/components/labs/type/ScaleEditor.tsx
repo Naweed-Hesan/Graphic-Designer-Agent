@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
-import { Field, Input, Select, Switch } from "@/components/ui";
+import { NumberInput } from "@/components/ui/number-input";
+import { Field, Select, Switch } from "@/components/ui";
 import type { Typography } from "@/lib/genome/schema";
 import { fluidScale, RATIOS, ratioFor } from "@/lib/type/scale";
 import { fontStack } from "@/lib/type/fonts";
@@ -31,16 +32,12 @@ export function ScaleEditor({ typography, brand, edit }: { typography: Typograph
     >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <Field label="Base size" hint="px">
-          <Input
-            type="number"
-            min={10}
-            max={28}
+          <NumberInput
+            min={8}
+            max={40}
             step={1}
             value={base}
-            onChange={(e) => {
-              const v = e.target.valueAsNumber;
-              if (Number.isFinite(v) && v >= 8 && v <= 40) edit((g) => void (g.visual.typography.scale.base = v), `Type base size → ${v}px`, { debounce: true });
-            }}
+            onCommit={(v) => edit((g) => void (g.visual.typography.scale.base = v), `Type base size → ${v}px`, { debounce: true })}
             aria-label="Base size in pixels"
           />
         </Field>
@@ -70,17 +67,13 @@ export function ScaleEditor({ typography, brand, edit }: { typography: Typograph
         </Field>
         {isCustom && (
           <Field label="Custom ratio" hint="1.05–2">
-            <Input
-              type="number"
+            <NumberInput
               min={1.05}
-              max={2}
+              max={2.5}
               step={0.01}
               value={ratio}
               aria-label="Custom ratio"
-              onChange={(e) => {
-                const v = e.target.valueAsNumber;
-                if (Number.isFinite(v) && v > 1 && v <= 2.5) edit((g) => void (g.visual.typography.scale.ratio = Math.round(v * 1000) / 1000), `Type ratio → ${Math.round(v * 1000) / 1000}`, { debounce: true });
-              }}
+              onCommit={(v) => edit((g) => void (g.visual.typography.scale.ratio = Math.round(v * 1000) / 1000), `Type ratio → ${Math.round(v * 1000) / 1000}`, { debounce: true })}
             />
           </Field>
         )}

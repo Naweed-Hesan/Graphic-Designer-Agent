@@ -27,14 +27,56 @@ export function serializeSvg(el: Element): string {
 }
 
 /** Drop XML prolog, doctype, scripts and inline event handlers from user-supplied SVG. */
-export function sanitizeSvg(svg: string): string {
+const DANGEROUS_TAGS = new Set(["script", "foreignobject", "iframe", "object", "embed", "audio", "video", "animate", "set", "handler", "listener"]);
+
+/** Regex pass used on the server and as a first line of defence in the browser. */
+function sanitizeSvgText(svg: string): string {
   return svg
     .replace(/<\?xml[^>]*\?>/gi, "")
-    .replace(/<!DOCTYPE[^>]*>/gi, "")
+    .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+    .replace(/<!ENTITY[\s\S]*?>/gi, "")
     .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*')/gi, "")
-    .replace(/\s(href|xlink:href)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "")
+    .replace(/<foreignObject\b[\s\S]*?<\/foreignObject>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/\s(href|xlink:href)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*')/gi, "")
     .trim();
+}
+
+/**
+ * Removes anything executable or network-reaching from an SVG document:
+ * scripts, foreignObject, event-handler attributes, javascript: URLs and
+ * external href targets. Uses the DOM parser in the browser (which sees
+ * attribute forms a regex cannot) and the text pass on the server.
+ */
+export function sanitizeSvg(svg: string): string {
+  const text = sanitizeSvgText(svg);
+  if (typeof DOMParser === "undefined" || typeof XMLSerializer === "undefined") return text;
+  let doc: Document;
+  try {
+    doc = new DOMParser().parseFromString(text, "image/svg+xml");
+  } catch {
+    return text;
+  }
+  const root = doc.documentElement;
+  if (!root || root.localName !== "svg" || doc.querySelector("parsererror")) return text;
+  const walk = (el: Element) => {
+    for (const child of Array.from(el.children)) {
+      if (DANGEROUS_TAGS.has(child.localName.toLowerCase())) {
+        child.remove();
+        continue;
+      }
+      for (const attr of Array.from(child.attributes)) {
+        const name = attr.name.toLowerCase();
+        const value = attr.value.trim().toLowerCase();
+        if (name.startsWith("on") || value.startsWith("javascript:") || value.startsWith("data:text/html")) child.removeAttribute(attr.name);
+        else if ((name === "href" || name === "xlink:href") && /^(https?:)?\/\//.test(value) && child.localName.toLowerCase() !== "a") child.removeAttribute(attr.name);
+      }
+      walk(child);
+    }
+  };
+  for (const attr of Array.from(root.attributes)) if (attr.name.toLowerCase().startsWith("on")) root.removeAttribute(attr.name);
+  walk(root);
+  return new XMLSerializer().serializeToString(root);
 }
 
 /** Attributes of the root <svg> tag. */

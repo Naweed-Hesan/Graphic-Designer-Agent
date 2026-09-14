@@ -59,3 +59,17 @@ describe("Creative Director tools", () => {
     expect(b.length).toBeLessThan(1500);
   });
 });
+
+describe("update_genome hardening", () => {
+  it("refuses unsafe paths", async () => {
+    const c = ctx();
+    const out = await runTool("update_genome", { operations: [{ path: "__proto__.owned", value: 1 }], summary: "x" }, c, "t9");
+    expect(out).toContain("Rejected");
+    expect(({} as Record<string, unknown>).owned).toBeUndefined();
+  });
+  it("advertises optional parameters as optional in the JSON schema", () => {
+    const t = TOOLS.find((x) => x.name === "generate_image")!;
+    const schema = toolJsonSchema(t) as { required?: string[] };
+    expect(schema.required ?? []).toEqual(["subject"]);
+  });
+});

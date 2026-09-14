@@ -11,6 +11,7 @@ import { SettingsDialog } from "./SettingsDialog";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { useProject } from "@/lib/store/project";
 import { useSettings } from "@/lib/store/settings";
+import { useAssistant } from "@/lib/store/assistant";
 import { STAGES, nextStage, prevStage } from "@/lib/genome/stages";
 import type { StageId } from "@/lib/genome/schema";
 import { cn, downloadBlob, slugify } from "@/lib/utils";
@@ -31,7 +32,10 @@ export function StudioShell({ projectId, children }: { projectId: string; childr
 
   React.useEffect(() => {
     load(projectId);
-    return () => unload();
+    return () => {
+      useAssistant.getState().stop(projectId);
+      unload();
+    };
   }, [projectId, load, unload]);
 
   // Keep brand fonts loaded across every lab so previews are always accurate.
@@ -46,6 +50,8 @@ export function StudioShell({ projectId, children }: { projectId: string; childr
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing = Boolean(target?.closest?.('input, textarea, select, [contenteditable="true"]')) || e.isComposing;
       if ((e.metaKey || e.ctrlKey) && e.key === "j") {
         e.preventDefault();
         setSettings({ assistantOpen: !useSettings.getState().assistantOpen });
@@ -54,7 +60,7 @@ export function StudioShell({ projectId, children }: { projectId: string; childr
         e.preventDefault();
         setSettingsOpen(true);
       }
-      if (e.altKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+      if (!typing && e.altKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
         const target = e.key === "ArrowRight" ? nextStage(stage) : prevStage(stage);
         if (target) router.push(`/studio/${projectId}/${target}`);
       }
@@ -161,22 +167,18 @@ export function StudioShell({ projectId, children }: { projectId: string; childr
             {genome && <StageFooter projectId={projectId} stage={stage} />}
           </main>
           {assistantOpen && (
-            <aside className="no-print w-[400px] shrink-0 border-l border-line bg-bg-elev flex flex-col min-h-0 hidden lg:flex">
-              <AssistantPanel stage={stage} />
+            <aside className="no-print fixed inset-0 z-40 bg-bg flex flex-col min-h-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px] lg:shrink-0 lg:border-l lg:border-line lg:bg-bg-elev">
+              <AssistantPanel stage={stage} onClose={() => setSettings({ assistantOpen: false })} />
             </aside>
           )}
         </div>
       </div>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      {/* Mobile assistant */}
-      {assistantOpen && (
-        <div className="no-print lg:hidden fixed inset-0 z-40 bg-bg flex flex-col">
-          <AssistantPanel stage={stage} onClose={() => setSettings({ assistantOpen: false })} />
-        </div>
+      {!assistantOpen && (
+        <button className="no-print lg:hidden fixed bottom-4 right-4 z-30 rounded-full bg-accent text-accent-fg p-3 shadow-card" onClick={() => setSettings({ assistantOpen: true })} aria-label="Open Creative Director">
+          <MessageSquare className="h-5 w-5" />
+        </button>
       )}
-      <button className="no-print lg:hidden fixed bottom-4 right-4 z-30 rounded-full bg-accent text-accent-fg p-3 shadow-card" onClick={() => setSettings({ assistantOpen: true })} aria-label="Open Creative Director">
-        <MessageSquare className="h-5 w-5" />
-      </button>
     </div>
   );
 }
@@ -234,10 +236,11 @@ function StageFooter({ projectId, stage }: { projectId: string; stage: StageId }
           <Check className={cn("h-4 w-4", status === "done" && "text-success")} /> {status === "done" ? "Marked done" : "Mark stage done"}
         </Button>
         {next && (
-          <Link href={`/studio/${projectId}/${next}`}>
-            <Button size="sm">
-              Next: {STAGES.find((s) => s.id === next)?.label} <ChevronRight className="h-4 w-4" />
-            </Button>
+          <Link
+            href={`/studio/${projectId}/${next}`}
+            className="inline-flex items-center justify-center font-medium h-8 px-3 text-[13px] gap-1.5 rounded-md bg-accent text-accent-fg hover:brightness-110 shadow-sm whitespace-nowrap"
+          >
+            Next: {STAGES.find((s) => s.id === next)?.label} <ChevronRight className="h-4 w-4" />
           </Link>
         )}
       </div>

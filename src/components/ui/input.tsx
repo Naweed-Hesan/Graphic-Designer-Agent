@@ -2,30 +2,55 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * A Field publishes an id + label name; the first form control inside it that
+ * has no id of its own claims the id so `<label for>` resolves even when the
+ * control is wrapped in other elements.
+ */
+export const FieldContext = React.createContext<{ id: string; label: string } | null>(null);
+
+/**
+ * Resolves the id / accessible name for a form control: an explicit id wins,
+ * otherwise the enclosing Field's id and label are used so `<label for>`
+ * resolves even when the control is wrapped in other elements. A Field should
+ * wrap a single control.
+ */
+export function useFieldControl(explicitId?: string, explicitLabel?: string): { id?: string; ariaLabel?: string } {
+  const ctx = React.useContext(FieldContext);
+  if (explicitId || !ctx) return { id: explicitId, ariaLabel: explicitLabel };
+  return { id: ctx.id, ariaLabel: explicitLabel ?? (ctx.label || undefined) };
+}
+
 const base =
   "w-full rounded-md border border-line bg-bg-inset px-3 text-sm text-fg placeholder:text-fg-subtle transition-colors focus:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
-export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, ...props }, ref) => <input ref={ref} className={cn(base, "h-9", className)} {...props} />,
-);
+export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(({ className, id, "aria-label": ariaLabel, ...props }, ref) => {
+  const ctl = useFieldControl(id, ariaLabel);
+  return <input ref={ref} id={ctl.id} aria-label={ctl.ariaLabel} className={cn(base, "h-9", className)} {...props} />;
+});
 Input.displayName = "Input";
 
-export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  ({ className, ...props }, ref) => (
-    <textarea ref={ref} className={cn(base, "py-2 min-h-[80px] leading-relaxed resize-y", className)} {...props} />
-  ),
-);
+export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(({ className, id, "aria-label": ariaLabel, ...props }, ref) => {
+  const ctl = useFieldControl(id, ariaLabel);
+  return <textarea ref={ref} id={ctl.id} aria-label={ctl.ariaLabel} className={cn(base, "py-2 min-h-[80px] leading-relaxed resize-y", className)} {...props} />;
+});
 Textarea.displayName = "Textarea";
 
-export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
-  ({ className, children, ...props }, ref) => (
-    <select ref={ref} className={cn(base, "h-9 pr-8 appearance-none bg-no-repeat bg-[right_8px_center]", className)}
+export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(({ className, children, id, "aria-label": ariaLabel, ...props }, ref) => {
+  const ctl = useFieldControl(id, ariaLabel);
+  return (
+    <select
+      ref={ref}
+      id={ctl.id}
+      aria-label={ctl.ariaLabel}
+      className={cn(base, "h-9 pr-8 appearance-none bg-no-repeat bg-[right_8px_center]", className)}
       style={{ backgroundImage: "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>\")" }}
-      {...props}>
+      {...props}
+    >
       {children}
     </select>
-  ),
-);
+  );
+});
 Select.displayName = "Select";
 
 export function Label({ className, children, hint, ...props }: React.LabelHTMLAttributes<HTMLLabelElement> & { hint?: string }) {
@@ -38,15 +63,20 @@ export function Label({ className, children, hint, ...props }: React.LabelHTMLAt
 }
 
 export function Field({ label, hint, children, className, htmlFor }: { label: React.ReactNode; hint?: string; children: React.ReactNode; className?: string; htmlFor?: string }) {
-  // Associate the label with the first child that carries an id, unless told otherwise.
-  const childId = React.Children.toArray(children).map((c) => (React.isValidElement<{ id?: string }>(c) ? c.props.id : undefined)).find(Boolean);
+  const auto = React.useId();
+  // Prefer an explicit id, then an id on a direct child; otherwise the first control inside claims the generated id.
+  const childId = React.Children.toArray(children).map((c) => (React.isValidElement<{ id?: string }>(c) && typeof c.type !== "string" ? c.props.id : undefined)).find(Boolean);
+  const id = htmlFor ?? childId ?? auto;
+  const ctx = React.useMemo(() => ({ id, label: typeof label === "string" ? label : "" }), [id, label]);
   return (
-    <div className={cn("flex flex-col", className)}>
-      <Label hint={hint} htmlFor={htmlFor ?? childId}>
-        {label}
-      </Label>
-      {children}
-    </div>
+    <FieldContext.Provider value={ctx}>
+      <div className={cn("flex flex-col", className)}>
+        <Label hint={hint} htmlFor={id}>
+          {label}
+        </Label>
+        {children}
+      </div>
+    </FieldContext.Provider>
   );
 }
 

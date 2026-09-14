@@ -89,6 +89,7 @@ export function LockupsTab({ onGoVectorise, onGoWordmark, onSaved }: { onGoVecto
           ids.wordmark = variants.wordmark.assetId;
           continue;
         }
+        if ((e.key === "mark" && markPlaceholder) || (e.key === "wordmark" && wordmarkPlaceholder)) continue;
         const size = svgSize(e.svg);
         const a = await addAsset({
           kind: "svg",

@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { debounce, uid } from "@/lib/utils";
-import { type Genome, type StageId, type StageStatus, parseGenome } from "@/lib/genome/schema";
+import { type Genome, type StageId, type StageStatus, safeParseGenome } from "@/lib/genome/schema";
 import { applyOperations, type GenomeOperation } from "@/lib/genome/paths";
 import { type Asset, deleteAsset as dbDeleteAsset, getProject, listAssets, putAsset, saveProject } from "@/lib/db";
 
@@ -18,7 +18,10 @@ interface ProjectState {
   unload: () => void;
   /** Functional update; recorded to history when `summary` is given. */
   update: (fn: (g: Genome) => Genome | void, opts?: { summary?: string; actor?: "user" | "ai" | "system"; stage?: StageId }) => void;
-  applyOps: (ops: GenomeOperation[], opts?: { summary?: string; actor?: "user" | "ai" | "system"; stage?: StageId }) => void;
+  /** Applies dot-path operations; returns false (and changes nothing) when the result would be invalid. */
+  applyOps: (ops: GenomeOperation[], opts?: { summary?: string; actor?: "user" | "ai" | "system"; stage?: StageId }) => boolean;
+  /** Writes any pending autosave immediately. */
+  flush: () => Promise<void>;
   setStage: (stage: StageId, status: StageStatus) => void;
   addAsset: (asset: Omit<Asset, "id" | "projectId" | "createdAt"> & { id?: string }) => Promise<Asset>;
   removeAsset: (id: string) => Promise<void>;
@@ -26,14 +29,48 @@ interface ProjectState {
   replaceGenome: (g: Genome) => void;
 }
 
-const persist = debounce(async (g: Genome, set: (p: Partial<ProjectState>) => void) => {
+/** Pending autosave; flushed on a debounce and on pagehide/visibility change so nothing is lost on reload. */
+let pending: { genome: Genome; set: (p: Partial<ProjectState>) => void } | null = null;
+let listenersInstalled = false;
+
+async function flushPending() {
+  const p = pending;
+  if (!p) return;
+  pending = null;
   try {
-    set({ saving: true });
-    await saveProject(g);
+    p.set({ saving: true });
+    await saveProject(p.genome);
   } finally {
-    set({ saving: false });
+    p.set({ saving: false });
   }
-}, 400);
+}
+
+const scheduleFlush = debounce(() => void flushPending(), 400);
+
+function persist(genome: Genome, set: (p: Partial<ProjectState>) => void) {
+  pending = { genome, set };
+  if (!listenersInstalled && typeof window !== "undefined") {
+    listenersInstalled = true;
+    window.addEventListener("pagehide", () => void flushPending());
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) void flushPending();
+    });
+  }
+  scheduleFlush();
+}
+
+/** Drops null holes and re-parses so a damaged document still opens. */
+function repairGenome(raw: unknown): Genome | null {
+  const direct = safeParseGenome(raw);
+  if (direct.ok) return direct.genome;
+  try {
+    const cleaned = JSON.parse(JSON.stringify(raw), (_k, v) => (Array.isArray(v) ? v.filter((x) => x !== null && x !== undefined) : v));
+    const again = safeParseGenome(cleaned);
+    return again.ok ? again.genome : null;
+  } catch {
+    return null;
+  }
+}
 
 export const useProject = create<ProjectState>()((set, get) => ({
   genome: null,
@@ -46,12 +83,17 @@ export const useProject = create<ProjectState>()((set, get) => ({
   load: async (id) => {
     set({ loading: true, error: null });
     try {
+      await flushPending();
       const row = await getProject(id);
       if (!row) {
         set({ loading: false, error: "Project not found", genome: null, assets: [] });
         return;
       }
-      const genome = parseGenome(row.genome);
+      const genome = repairGenome(row.genome);
+      if (!genome) {
+        set({ loading: false, error: "This project's data could not be read. Import a bundle backup or start a new brand.", genome: null, assets: [] });
+        return;
+      }
       const assets = await listAssets(id);
       set({ genome, assets, loading: false, rev: get().rev + 1 });
     } catch (e) {
@@ -59,7 +101,14 @@ export const useProject = create<ProjectState>()((set, get) => ({
     }
   },
 
-  unload: () => set({ genome: null, assets: [], error: null }),
+  unload: () => {
+    void flushPending();
+    for (const u of urlCache.values()) URL.revokeObjectURL(u);
+    urlCache.clear();
+    set({ genome: null, assets: [], error: null });
+  },
+
+  flush: () => flushPending(),
 
   update: (fn, opts) => {
     const g = get().genome;
@@ -79,7 +128,18 @@ export const useProject = create<ProjectState>()((set, get) => ({
   },
 
   applyOps: (ops, opts) => {
-    get().update((g) => applyOperations(g, ops), opts);
+    const g = get().genome;
+    if (!g) return false;
+    let next: Genome;
+    try {
+      next = applyOperations(g, ops);
+    } catch {
+      return false;
+    }
+    const parsed = safeParseGenome(next);
+    if (!parsed.ok) return false;
+    get().update(() => parsed.genome, opts);
+    return true;
   },
 
   setStage: (stage, status) => {
@@ -102,6 +162,12 @@ export const useProject = create<ProjectState>()((set, get) => ({
 
   removeAsset: async (id) => {
     await dbDeleteAsset(id);
+    for (const [key, url] of urlCache) {
+      if (key.startsWith(`${id}:`)) {
+        URL.revokeObjectURL(url);
+        urlCache.delete(key);
+      }
+    }
     set({ assets: get().assets.filter((a) => a.id !== id) });
   },
 
@@ -117,7 +183,7 @@ export const useProject = create<ProjectState>()((set, get) => ({
   },
 }));
 
-/** Convenience: object URL cache for asset blobs (revoked on unload). */
+/** Object URL cache for asset blobs; revoked when the project unloads or an asset is removed. */
 const urlCache = new Map<string, string>();
 export function assetUrl(asset: Asset | undefined): string {
   if (!asset) return "";

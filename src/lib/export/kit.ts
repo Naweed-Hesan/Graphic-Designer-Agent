@@ -52,6 +52,8 @@ export interface KitFile {
   data: Blob | string | Uint8Array;
   group: KitGroupId | "root";
   bytes: number;
+  /** Build notes (skipped files etc.) carried on README.md */
+  notes?: string[];
 }
 
 export interface KitProgress {
@@ -141,6 +143,7 @@ export async function buildKitFiles(genome: Genome, assets: Asset[], options: Pa
   tick("Guidelines");
 
   /* logo */
+  const warnings: string[] = [];
   for (const v of variants) {
     const base = slugify(v.key);
     files.push(file(`logo/svg/${base}.svg`, `<?xml version="1.0" encoding="UTF-8"?>\n${v.svg}`, "logo"));
@@ -150,34 +153,42 @@ export async function buildKitFiles(genome: Genome, assets: Asset[], options: Pa
       ["2x", 1024],
       ["4x", 2048],
     ] as const) {
-      files.push(file(`logo/png/${base}@${scale}.png`, await pngOf(v.svg, longest, undefined, 0, v.label), "logo"));
+      try {
+        files.push(file(`logo/png/${base}@${scale}.png`, await pngOf(v.svg, longest, undefined, 0, v.label), "logo"));
+      } catch (e) {
+        warnings.push(`Skipped logo/png/${base}@${scale}.png: ${e instanceof Error ? e.message : String(e)}`);
+      }
       tick(`Logo ${v.label} @${scale}`);
     }
   }
 
   /* favicon */
   if (favSource) {
-    const icoPngs: { size: number; blob: Blob }[] = [];
-    for (const size of [16, 32, 48]) {
-      icoPngs.push({ size, blob: await pngOf(favSource.svg, size, undefined, 0, "favicon") });
-      tick(`Favicon ${size}px`);
+    try {
+      const icoPngs: { size: number; blob: Blob }[] = [];
+      for (const size of [16, 32, 48]) {
+        icoPngs.push({ size, blob: await pngOf(favSource.svg, size, undefined, 0, "favicon") });
+        tick(`Favicon ${size}px`);
+      }
+      files.push(file("logo/favicon/favicon.ico", await pngsToIco(icoPngs), "favicon"));
+      const bg = paletteColor(genome, "background", "#ffffff");
+      files.push(file("logo/favicon/apple-touch-icon.png", await pngOf(favSource.svg, 180, bg, 18, "apple-touch-icon"), "favicon"));
+      tick("Apple touch icon");
+      files.push(file("logo/favicon/android-chrome-192x192.png", await pngOf(favSource.svg, 192, undefined, 0, "android icon"), "favicon"));
+      tick("Android icon 192");
+      files.push(file("logo/favicon/android-chrome-512x512.png", await pngOf(favSource.svg, 512, undefined, 0, "android icon"), "favicon"));
+      tick("Android icon 512");
+      files.push(file("logo/favicon/site.webmanifest", siteWebmanifest(genome), "favicon"));
+      files.push(
+        file(
+          "logo/favicon/snippet.html",
+          `<link rel="icon" href="/favicon.ico" sizes="32x32">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n<link rel="manifest" href="/site.webmanifest">\n<meta name="theme-color" content="${paletteColor(genome, "primary", "#1f1f1f")}">\n`,
+          "favicon",
+        ),
+      );
+    } catch (e) {
+      warnings.push(`Skipped favicon files: ${e instanceof Error ? e.message : String(e)}`);
     }
-    files.push(file("logo/favicon/favicon.ico", await pngsToIco(icoPngs), "favicon"));
-    const bg = paletteColor(genome, "background", "#ffffff");
-    files.push(file("logo/favicon/apple-touch-icon.png", await pngOf(favSource.svg, 180, bg, 18, "apple-touch-icon"), "favicon"));
-    tick("Apple touch icon");
-    files.push(file("logo/favicon/android-chrome-192x192.png", await pngOf(favSource.svg, 192, undefined, 0, "android icon"), "favicon"));
-    tick("Android icon 192");
-    files.push(file("logo/favicon/android-chrome-512x512.png", await pngOf(favSource.svg, 512, undefined, 0, "android icon"), "favicon"));
-    tick("Android icon 512");
-    files.push(file("logo/favicon/site.webmanifest", siteWebmanifest(genome), "favicon"));
-    files.push(
-      file(
-        "logo/favicon/snippet.html",
-        `<link rel="icon" href="/favicon.ico" sizes="32x32">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n<link rel="manifest" href="/site.webmanifest">\n<meta name="theme-color" content="${paletteColor(genome, "primary", "#1f1f1f")}">\n`,
-        "favicon",
-      ),
-    );
   }
 
   /* colour */
@@ -223,20 +234,24 @@ export async function buildKitFiles(genome: Genome, assets: Asset[], options: Pa
   /* root */
   files.push(file("genome.json", JSON.stringify(genome, null, 2), "root"));
   const include = { ...DEFAULT_KIT_OPTIONS.include, ...(options.include ?? {}) };
-  const counts = summarizeKit(files);
-  files.unshift(
-    file(
-      "README.md",
-      kitReadme(genome, {
-        placeholderLogo: placeholder,
-        generatedOn: new Date().toISOString().slice(0, 10),
-        groups: KIT_GROUPS.map((g) => ({ id: g.id, label: g.label, included: include[g.id], count: counts[g.id]?.count ?? 0 })),
-      }),
-      "root",
-    ),
-  );
+  files.unshift(readmeFor(genome, files, include, placeholder, warnings));
   onProgress?.({ phase: "render", percent: 100, label: "Rendered" });
   return files;
+}
+
+/** README.md describing exactly the files in `files` for the given group selection. */
+export function readmeFor(genome: Genome, files: KitFile[], include: Record<KitGroupId, boolean>, placeholderLogo: boolean, notes: string[] = []): KitFile {
+  const selected = files.filter((f) => f.group === "root" || include[f.group as KitGroupId]);
+  const counts = summarizeKit(selected);
+  let text = kitReadme(genome, {
+    placeholderLogo,
+    generatedOn: new Date().toISOString().slice(0, 10),
+    groups: KIT_GROUPS.map((g) => ({ id: g.id, label: g.label, included: include[g.id], count: counts[g.id]?.count ?? 0 })),
+  });
+  if (notes.length) text += `\n\n## Build notes\n\n${notes.map((n) => `- ${n}`).join("\n")}\n`;
+  const f = file("README.md", text, "root");
+  f.notes = notes;
+  return f;
 }
 
 export function summarizeKit(files: KitFile[]): Record<string, { count: number; bytes: number }> {

@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { NumberInput } from "@/components/ui/number-input";
 import { Plus, Trash2, Wand2, LetterText } from "lucide-react";
 import { toast } from "sonner";
 import { Button, EmptyState, Input, Select } from "@/components/ui";
@@ -72,33 +73,25 @@ function StyleRow({ style, genome, brand, edit }: { style: TypeStyle; genome: Ge
         </Select>
       </td>
       <td className="p-1.5 w-20">
-        <Input
+        <NumberInput
           className={cell}
-          type="number"
           min={0.8}
           max={3}
           step={0.05}
           value={style.lineHeight}
           aria-label="Line height"
-          onChange={(e) => {
-            const v = num(e);
-            if (v !== null && v > 0) patch((s) => void (s.lineHeight = v), `${style.name} line-height → ${v}`);
-          }}
+          onCommit={(v) => patch((s) => void (s.lineHeight = v), `${style.name} line-height → ${v}`)}
         />
       </td>
       <td className="p-1.5 w-24">
-        <Input
+        <NumberInput
           className={cell}
-          type="number"
           min={-0.1}
           max={0.5}
           step={0.005}
           value={style.letterSpacing}
           aria-label="Letter spacing in em"
-          onChange={(e) => {
-            const v = num(e);
-            if (v !== null) patch((s) => void (s.letterSpacing = v), `${style.name} tracking → ${v}em`);
-          }}
+          onCommit={(v) => patch((s) => void (s.letterSpacing = v), `${style.name} tracking → ${v}em`)}
         />
       </td>
       <td className="p-1.5 min-w-[110px]">

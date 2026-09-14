@@ -2,14 +2,12 @@
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Square, Trash2, X, Wrench, ChevronDown, Sparkles, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
 import { Button, Spinner, Badge } from "@/components/ui";
 import { useProject, assetUrl } from "@/lib/store/project";
 import { useSettings, type AssistantProviderId } from "@/lib/store/settings";
-import { getThread, saveThread, type ChatMessage, type ChatThread } from "@/lib/db";
-import { streamChat } from "@/lib/api";
-import type { ChatEvent } from "@/lib/ai/events";
-import { cn, dataUrlToBlob, uid } from "@/lib/utils";
+import { useAssistant } from "@/lib/store/assistant";
+import type { ChatMessage } from "@/lib/db";
+import { cn } from "@/lib/utils";
 import type { StageId } from "@/lib/genome/schema";
 import { STAGE_BY_ID } from "@/lib/genome/stages";
 
@@ -26,142 +24,38 @@ const QUICK: Record<StageId, string[]> = {
   export: ["What should be in the handoff for a developer?", "List the assets a printer needs", "Summarise the identity in one paragraph"],
 };
 
-function mkMessage(role: ChatMessage["role"], content: string): ChatMessage {
-  return { id: uid(8), role, content, tools: role === "assistant" ? [] : undefined, createdAt: Date.now() };
-}
-
-function newThread(projectId: string, provider: string): ChatThread {
-  const now = Date.now();
-  return { id: uid(10), projectId, title: "Creative Director", messages: [], provider, createdAt: now, updatedAt: now };
-}
-
 export function AssistantPanel({ stage, onClose }: { stage: StageId; onClose?: () => void }) {
-  const genome = useProject((s) => s.genome);
-  const applyOps = useProject((s) => s.applyOps);
-  const addAsset = useProject((s) => s.addAsset);
+  const projectId = useProject((s) => s.genome?.id ?? "");
   const provider = useSettings((s) => s.assistant.provider);
   const setSettings = useSettings((s) => s.set);
-  const [thread, setThread] = React.useState<ChatThread | null>(null);
+  const thread = useAssistant((s) => (projectId ? s.threads[projectId] : undefined));
+  const busy = useAssistant((s) => Boolean(projectId && s.busy[projectId]));
+  const status = useAssistant((s) => (projectId ? s.status[projectId] : null) ?? null);
+  const load = useAssistant((s) => s.load);
+  const send = useAssistant((s) => s.send);
+  const stop = useAssistant((s) => s.stop);
+  const clear = useAssistant((s) => s.clear);
   const [input, setInput] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
-  const [status, setStatus] = React.useState<string | null>(null);
-  const abortRef = React.useRef<AbortController | null>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
-  const projectId = genome?.id;
 
   React.useEffect(() => {
-    if (!projectId) return;
-    let alive = true;
-    getThread(projectId).then((t) => {
-      if (!alive) return;
-      setThread(t ?? newThread(projectId, provider));
-    });
-    return () => {
-      alive = false;
-    };
-  }, [projectId, provider]);
+    if (projectId) load(projectId);
+  }, [projectId, load]);
 
   React.useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [thread?.messages, status]);
 
-  const persist = React.useCallback((t: ChatThread) => {
-    setThread(t);
-    saveThread(t).catch(() => {});
-  }, []);
-
-  const send = async (text: string) => {
-    if (!genome || !thread || busy || !text.trim()) return;
-    const userMsg = mkMessage("user", text.trim());
-    const assistantMsg = mkMessage("assistant", "");
-    let current: ChatThread = { ...thread, messages: [...thread.messages, userMsg, assistantMsg] };
-    persist(current);
+  const submit = (text: string) => {
+    if (!projectId || busy || !text.trim()) return;
     setInput("");
-    setBusy(true);
-    setStatus("Thinking…");
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    const patch = (fn: (m: ChatMessage) => void) => {
-      const msgs = current.messages.map((m) => (m.id === assistantMsg.id ? { ...m, tools: m.tools ? [...m.tools] : [] } : m));
-      const m = msgs[msgs.length - 1];
-      fn(m);
-      current = { ...current, messages: msgs };
-      setThread(current);
-    };
-
-    try {
-      await streamChat(
-        {
-          messages: current.messages.filter((m) => m.id !== assistantMsg.id).map((m) => ({ role: m.role, content: m.content })),
-          genome: useProject.getState().genome,
-          assets: useProject.getState().assets.map((a) => ({ id: a.id, name: a.name, kind: a.kind, stage: a.stage, prompt: a.prompt })),
-          stage,
-          sessionId: thread.provider === provider ? thread.sessionId : undefined,
-          provider,
-        },
-        async (e: ChatEvent) => {
-          switch (e.type) {
-            case "status":
-              setStatus(e.message);
-              break;
-            case "text":
-              setStatus(null);
-              patch((m) => void (m.content += e.delta));
-              break;
-            case "tool-start":
-              setStatus(`Using ${e.name}…`);
-              patch((m) => m.tools!.push({ id: e.id, name: e.name, args: e.args, status: "running" }));
-              break;
-            case "tool-end":
-              patch((m) => {
-                const t = m.tools!.find((x) => x.id === e.id);
-                if (t) {
-                  t.status = e.error ? "error" : "done";
-                  t.result = e.error ?? e.result;
-                }
-              });
-              break;
-            case "genome-ops":
-              applyOps(e.ops, { summary: e.summary, actor: "ai", stage });
-              toast.success(e.summary, { duration: 2500 });
-              break;
-            case "asset": {
-              const blob = dataUrlToBlob(e.asset.dataUrl);
-              const a = await addAsset({ kind: e.asset.kind, name: e.asset.name, mime: e.asset.mime, blob, prompt: e.asset.prompt, provider: e.asset.provider, model: e.asset.model, stage: e.asset.stage as StageId, tags: e.asset.tags ?? [], width: e.asset.width, height: e.asset.height });
-              patch((m) => void (m.images = [...(m.images ?? []), a.id]));
-              break;
-            }
-            case "done":
-              current = { ...current, sessionId: e.sessionId ?? current.sessionId, provider };
-              break;
-            case "error":
-              patch((m) => void (m.content += `\n\n> **Error:** ${e.message}${e.hint ? `\n>\n> ${e.hint}` : ""}`));
-              toast.error(e.message);
-              break;
-          }
-        },
-        ctrl.signal,
-      );
-    } catch (err) {
-      if (!ctrl.signal.aborted) {
-        const msg = err instanceof Error ? err.message : String(err);
-        patch((m) => void (m.content += `\n\n> **Error:** ${msg}`));
-        toast.error(msg);
-      }
-    } finally {
-      setBusy(false);
-      setStatus(null);
-      abortRef.current = null;
-      persist(current);
-    }
+    void send(projectId, text, stage);
   };
 
-  const stop = () => abortRef.current?.abort();
-  const clear = () => {
+  const onClear = () => {
     if (!thread) return;
     if (thread.messages.length && !confirm("Clear this conversation?")) return;
-    persist({ ...thread, messages: [], sessionId: undefined });
+    clear(projectId);
   };
 
   return (
@@ -174,6 +68,7 @@ export function AssistantPanel({ stage, onClose }: { stage: StageId; onClose?: (
           onChange={(e) => setSettings({ assistant: { provider: e.target.value as AssistantProviderId } })}
           className="ml-1 text-[11px] bg-bg-inset border border-line rounded-md px-1.5 h-6 text-fg-muted max-w-[150px]"
           title="Assistant provider"
+          aria-label="Assistant provider"
         >
           <option value="claude-agent">Claude (Agent SDK)</option>
           <option value="pollinations">Pollinations (free)</option>
@@ -182,11 +77,11 @@ export function AssistantPanel({ stage, onClose }: { stage: StageId; onClose?: (
           <option value="openai-compat">OpenAI-compatible</option>
         </select>
         <div className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={clear} title="Clear conversation">
+          <Button variant="ghost" size="icon-sm" onClick={onClear} title="Clear conversation" aria-label="Clear conversation">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
           {onClose && (
-            <Button variant="ghost" size="icon-sm" onClick={onClose} title="Close">
+            <Button variant="ghost" size="icon-sm" onClick={onClose} title="Close" aria-label="Close Creative Director">
               <X className="h-4 w-4" />
             </Button>
           )}
@@ -200,7 +95,7 @@ export function AssistantPanel({ stage, onClose }: { stage: StageId; onClose?: (
             <div className="label mb-1.5">Try on the {STAGE_BY_ID[stage].label} stage</div>
             <div className="flex flex-col gap-1.5">
               {QUICK[stage].map((q) => (
-                <button key={q} onClick={() => send(q)} className="text-left text-[13px] surface-2 px-3 py-2 hover:border-line-strong cursor-pointer">
+                <button key={q} onClick={() => submit(q)} className="text-left text-[13px] surface-2 px-3 py-2 hover:border-line-strong cursor-pointer">
                   {q}
                 </button>
               ))}
@@ -221,7 +116,7 @@ export function AssistantPanel({ stage, onClose }: { stage: StageId; onClose?: (
         className="shrink-0 border-t border-line p-3"
         onSubmit={(e) => {
           e.preventDefault();
-          send(input);
+          submit(input);
         }}
       >
         <div className="inset flex items-end gap-2 p-2 focus-within:border-line-strong">
@@ -231,19 +126,20 @@ export function AssistantPanel({ stage, onClose }: { stage: StageId; onClose?: (
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                send(input);
+                submit(input);
               }
             }}
             rows={2}
             placeholder={`Ask about ${STAGE_BY_ID[stage].label.toLowerCase()}… (Enter to send)`}
+            aria-label="Message the Creative Director"
             className="flex-1 bg-transparent text-sm resize-none outline-none placeholder:text-fg-subtle leading-relaxed max-h-40"
           />
           {busy ? (
-            <Button type="button" size="icon" variant="secondary" onClick={stop} title="Stop">
+            <Button type="button" size="icon" variant="secondary" onClick={() => stop(projectId)} title="Stop" aria-label="Stop">
               <Square className="h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" size="icon" disabled={!input.trim()} title="Send">
+            <Button type="submit" size="icon" disabled={!input.trim()} title="Send" aria-label="Send">
               <Send className="h-4 w-4" />
             </Button>
           )}

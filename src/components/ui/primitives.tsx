@@ -3,6 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useFieldControl } from "./input";
 
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
@@ -90,21 +91,56 @@ export function Tabs<T extends string>({ value, onChange, items, className }: { 
   );
 }
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function Dialog({ open, onClose, title, description, children, className, wide }: { open: boolean; onClose: () => void; title?: React.ReactNode; description?: React.ReactNode; children: React.ReactNode; className?: string; wide?: boolean }) {
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const titleId = React.useId();
   React.useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const previous = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    // Move focus inside the modal and keep Tab cycling within it.
+    const first = panel?.querySelector<HTMLElement>(FOCUSABLE);
+    (first ?? panel)?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !panel) return;
+      const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (!items.length) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const firstEl = items[0];
+      const lastEl = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === firstEl || !panel.contains(active))) {
+        e.preventDefault();
+        lastEl.focus();
+      } else if (!e.shiftKey && (active === lastEl || !panel.contains(active))) {
+        e.preventDefault();
+        firstEl.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      previous?.focus?.();
+    };
   }, [open, onClose]);
   if (!open || typeof document === "undefined") return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby={title ? titleId : undefined}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in" onClick={onClose} />
-      <div className={cn("relative surface shadow-card w-full max-h-[90vh] overflow-y-auto animate-in", wide ? "max-w-4xl" : "max-w-lg", className)}>
+      <div ref={panelRef} tabIndex={-1} className={cn("relative surface shadow-card w-full max-h-[90vh] overflow-y-auto animate-in outline-none", wide ? "max-w-4xl" : "max-w-lg", className)}>
         <div className="flex items-start justify-between gap-4 px-5 pt-5">
           <div>
-            {title ? <h2 className="text-base font-semibold">{title}</h2> : null}
+            {title ? <h2 id={titleId} className="text-base font-semibold">{title}</h2> : null}
             {description ? <p className="text-sm text-fg-muted mt-0.5">{description}</p> : null}
           </div>
           <button onClick={onClose} className="text-fg-subtle hover:text-fg rounded-md p-1 cursor-pointer" aria-label="Close">
@@ -120,6 +156,7 @@ export function Dialog({ open, onClose, title, description, children, className,
 
 export function Chips({ value, onChange, placeholder, id, ariaLabel }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string; id?: string; ariaLabel?: string }) {
   const [draft, setDraft] = React.useState("");
+  const ctl = useFieldControl(id, ariaLabel);
   const commit = () => {
     const v = draft.trim();
     if (!v) return;
@@ -137,8 +174,8 @@ export function Chips({ value, onChange, placeholder, id, ariaLabel }: { value: 
         </span>
       ))}
       <input
-        id={id}
-        aria-label={ariaLabel}
+        id={ctl.id}
+        aria-label={ctl.ariaLabel ?? placeholder}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {

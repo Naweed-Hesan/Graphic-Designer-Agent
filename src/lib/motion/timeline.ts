@@ -6,6 +6,7 @@
  * so call them from handlers/effects only.
  */
 import { clamp01, easeFromCss, type EasingFn } from "./easing";
+import { sanitizeSvg } from "@/lib/logo/svg";
 import { emberAt, type FrameDirectives, type MotionContext, type MotionPreset, type PartDirectives } from "./presets";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -47,7 +48,7 @@ export function parseViewBox(svg: string): ViewBox {
 
 function parseSvg(svg: string): { doc: XMLDocument; root: SVGSVGElement } {
   if (typeof DOMParser === "undefined") throw new Error("SVG processing needs a browser DOM");
-  const doc = new DOMParser().parseFromString(svg.trim(), "image/svg+xml");
+  const doc = new DOMParser().parseFromString(sanitizeSvg(svg).trim(), "image/svg+xml");
   const root = doc.documentElement as unknown as SVGSVGElement | null;
   if (!root || root.localName !== "svg" || doc.querySelector("parsererror")) throw new Error("The logo is not a valid SVG document");
   return { doc, root };

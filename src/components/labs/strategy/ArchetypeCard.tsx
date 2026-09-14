@@ -28,6 +28,7 @@ export function ArchetypeCard({ strategy, className }: { strategy: Strategy; cla
       set((s) => void (s.secondaryArchetype = ""), "secondary archetype cleared");
       return;
     }
+    if (strategy.archetype === id && !strategy.secondaryArchetype) return;
     set((s) => {
       if (s.archetype === id) s.archetype = s.secondaryArchetype;
       s.secondaryArchetype = id;

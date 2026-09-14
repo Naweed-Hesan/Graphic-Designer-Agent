@@ -122,17 +122,25 @@ export function withEnvFallbacks(s: ProviderSettings): ProviderSettings {
   };
 }
 
+/**
+ * fetch with a total deadline (headers + body) and caller cancellation that stays
+ * wired while the body is being consumed. Aborting an already-consumed response
+ * is a no-op, so the timer is simply left to expire.
+ */
 export async function fetchWithTimeout(url: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
   const { timeoutMs = 120_000, signal, ...rest } = init;
+  if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error("Aborted");
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(new Error("timeout")), timeoutMs);
+  const t = setTimeout(() => ctrl.abort(new Error(`timeout after ${Math.round(timeoutMs / 1000)}s`)), timeoutMs);
+  (t as { unref?: () => void }).unref?.();
   const onAbort = () => ctrl.abort(signal?.reason);
-  signal?.addEventListener("abort", onAbort);
+  signal?.addEventListener("abort", onAbort, { once: true });
   try {
     return await fetch(url, { ...rest, signal: ctrl.signal });
-  } finally {
+  } catch (e) {
     clearTimeout(t);
     signal?.removeEventListener("abort", onAbort);
+    throw e;
   }
 }
 

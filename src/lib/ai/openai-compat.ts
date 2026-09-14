@@ -69,12 +69,13 @@ export async function runOpenAICompat(opts: OpenAICompatOptions): Promise<void> 
 
   let counter = 0;
   for (let round = 0; round < 8; round++) {
+    if (signal?.aborted) return;
     const body: Record<string, unknown> = { model, messages: history, stream: true, temperature: 0.7 };
     if (tools) {
       body.tools = tools;
       body.tool_choice = "auto";
     }
-    const res = await fetchWithTimeout(`${base}/chat/completions`, { method: "POST", headers, body: JSON.stringify(body), signal, timeoutMs: 180_000 });
+    const res = await fetchWithTimeout(`${base}/chat/completions`, { method: "POST", headers, body: JSON.stringify(body), signal, timeoutMs: 600_000 });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       let msg = text.slice(0, 400) || res.statusText;
@@ -157,6 +158,7 @@ export async function runOpenAICompat(opts: OpenAICompatOptions): Promise<void> 
     const toolCalls = [...calls.values()].filter((c) => c.function.name);
     history.push({ role: "assistant", content: text || null, tool_calls: toolCalls });
     for (const call of toolCalls) {
+      if (signal?.aborted) return;
       let args: unknown = {};
       try {
         args = call.function.arguments ? JSON.parse(call.function.arguments) : {};

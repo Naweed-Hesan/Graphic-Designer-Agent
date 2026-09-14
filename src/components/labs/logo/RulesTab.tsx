@@ -1,7 +1,8 @@
 "use client";
 import * as React from "react";
+import { NumberInput } from "@/components/ui/number-input";
 import { Check, Plus, Ruler, X } from "lucide-react";
-import { Badge, Card, Chips, Input } from "@/components/ui";
+import { Badge, Card, Chips } from "@/components/ui";
 import { useProject } from "@/lib/store/project";
 import { getLogoVariants, paletteColor, placeholderMarkSvg, primaryLogo } from "@/lib/logo/assets";
 import { clearspaceGuideSvg, monochrome } from "@/lib/logo/svg";
@@ -15,6 +16,27 @@ export const STANDARD_DONTS = ["Don't stretch or distort the logo", "Don't rotat
 const SUGGESTED_RULES = ["Prefer the primary lockup on light backgrounds", "Use the mark alone below the minimum lockup size", "Use the mono variant on photography and single-colour print", "Reverse to white on the primary colour"];
 
 const TEST_SIZES = [16, 24, 32, 48, 64];
+
+type RulesPatch = { clearspaceMultiplier?: number; minSizePx?: number; minSizeMm?: number };
+
+function makeRulesCommit(update: ReturnType<typeof useProject.getState>["update"]) {
+  let pending: RulesPatch = {};
+  const flush = debounce(() => {
+    const patch = pending;
+    pending = {};
+    if (!Object.keys(patch).length) return;
+    update(
+      (g) => {
+        Object.assign(g.visual.logo, patch);
+      },
+      { summary: "Updated logo rules", stage: "logo" },
+    );
+  }, 300);
+  return (patch: RulesPatch) => {
+    pending = { ...pending, ...patch };
+    flush();
+  };
+}
 
 export function RulesTab() {
   const genome = useProject((s) => s.genome)!;
@@ -31,18 +53,8 @@ export function RulesTab() {
   const [minPx, setMinPx] = React.useState(logo.minSizePx);
   const [minMm, setMinMm] = React.useState(logo.minSizeMm);
 
-  const commit = React.useMemo(
-    () =>
-      debounce((patch: { clearspaceMultiplier?: number; minSizePx?: number; minSizeMm?: number }) => {
-        update(
-          (g) => {
-            Object.assign(g.visual.logo, patch);
-          },
-          { summary: "Updated logo rules", stage: "logo" },
-        );
-      }, 300),
-    [update],
-  );
+  // Accumulates rapid edits to several fields into one debounced Genome write.
+  const [commit] = React.useState(() => makeRulesCommit(update));
 
   const guide = React.useMemo(() => clearspaceGuideSvg(artwork.svg, clearspace), [artwork.svg, clearspace]);
   const size = svgSize(artwork.svg);
@@ -80,13 +92,11 @@ export function RulesTab() {
           <div className="h-px bg-line" />
           <div className="grid grid-cols-2 gap-3">
             <Control label="Min. size (screen)" hint="px wide">
-              <Input
-                type="number"
+              <NumberInput
                 min={8}
                 max={512}
                 value={minPx}
-                onChange={(e) => {
-                  const v = Math.max(1, Number(e.target.value) || 0);
+                onCommit={(v) => {
                   setMinPx(v);
                   commit({ minSizePx: v });
                 }}
@@ -94,14 +104,12 @@ export function RulesTab() {
               />
             </Control>
             <Control label="Min. size (print)" hint="mm wide">
-              <Input
-                type="number"
+              <NumberInput
                 min={1}
                 max={200}
                 step={0.5}
                 value={minMm}
-                onChange={(e) => {
-                  const v = Math.max(0.5, Number(e.target.value) || 0);
+                onCommit={(v) => {
                   setMinMm(v);
                   commit({ minSizeMm: v });
                 }}

@@ -48,3 +48,15 @@ describe("Brand Genome", () => {
     expect(nextStage("brief")).toBe("strategy");
   });
 });
+
+describe("path safety", () => {
+  it("rejects prototype-chain segments so AI edits cannot pollute Object.prototype", async () => {
+    const { assertSafePath, isSafePath } = await import("../paths");
+    expect(() => setByPath(createGenome("x"), "__proto__.polluted", "yes")).toThrow(/Unsafe path/);
+    expect(() => setByPath(createGenome("x"), "strategy.constructor.prototype.zz", "yes")).toThrow(/Unsafe path/);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(isSafePath("visual.palette.colors.0.hex")).toBe(true);
+    expect(isSafePath("a..b")).toBe(false);
+    expect(assertSafePath("stages.brief")).toEqual(["stages", "brief"]);
+  });
+});

@@ -24,7 +24,7 @@ Ligature is an open-source, local-first brand identity studio (Next.js 16 App Ro
 - `src/lib/type/fonts.ts` — `ensureFont(family, weights)` loads Google Fonts CSS on demand; `fontStack(family, fallback)`.
 - `src/lib/export/bundle.ts` — `exportProjectBundle(genome, assets)` (zip), `importBrandBundle(file)`, `extFor(mime)`.
 - `src/lib/utils.ts` — `cn`, `uid`, `debounce`, `clamp`, `slugify`, `blobToDataUrl`, `dataUrlToBlob`, `downloadBlob`, `loadImage`, `svgToDataUrl`, `formatBytes`, `timeAgo`.
-- Server: `src/lib/providers/*` (image/video providers with fallback chains), `src/lib/ai/*` (Creative Director: Claude Agent SDK bridge + OpenAI-compatible loop + tools), `src/app/api/*` routes (`generate/image`, `generate/video`, `ai/chat`, `ai/status`, `fonts`, `fonts/ttf?family=&weight=` (TTF for opentype.js), `proxy?url=`, `providers/models`).
+- Server: `src/lib/providers/*` (image/video providers with fallback chains), `src/lib/ai/*` (Creative Director: Claude Agent SDK bridge + OpenAI-compatible loop + tools), `src/app/api/*` routes (`generate/image`, `generate/video`, `ai/chat`, `ai/status`, `fonts`, `fonts/ttf?family=&weight=` (TTF for opentype.js), `providers/models`).
 - Shell: `src/components/shell/*` (dashboard, StudioShell, SettingsDialog), `src/components/assistant/AssistantPanel.tsx`.
 - Labs: `src/components/labs/<stage>/<Name>Lab.tsx`, registered in `src/components/labs/registry.tsx` (code-split). Export names: `BriefLab, StrategyLab, LogoLab, ColorLab, TypeLab, ImageryLab, MotionLab, MockupLab, GuidelinesLab, ExportLab`.
 

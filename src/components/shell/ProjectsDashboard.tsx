@@ -136,7 +136,7 @@ export function ProjectsDashboard() {
                         </div>
                       </div>
                       <button
-                        className="opacity-0 group-hover:opacity-100 text-fg-subtle hover:text-danger p-1 rounded-md transition-opacity cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 group-focus-within:opacity-100 text-fg-subtle hover:text-danger p-1 rounded-md transition-opacity cursor-pointer"
                         title="Delete project"
                         onClick={async () => {
                           if (!confirm(`Delete "${p.name}" and all its assets? This cannot be undone.`)) return;

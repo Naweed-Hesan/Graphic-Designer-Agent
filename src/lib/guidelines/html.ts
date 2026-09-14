@@ -4,6 +4,7 @@
  * Pure string builders — no React, no DOM.
  */
 import type { GuidelinesDoc, GuidelinesSection, ImageRef, ContrastPair } from "./model";
+import { sanitizeSvg } from "@/lib/logo/svg";
 import { tableOfContents } from "./model";
 import { parseCubicBezier } from "@/lib/export/tokens";
 
@@ -232,7 +233,7 @@ ${opts.standalone ? "html,body{margin:0;padding:0;background:#fff;}" : ""}
 
 /* ────────────────────────────── HTML ────────────────────────────── */
 
-const svgInline = (svg: string) => svg;
+const svgInline = (svg: string) => sanitizeSvg(svg);
 
 function contrastRow(p: ContrastPair): string {
   const r = p.report;
@@ -275,7 +276,7 @@ function renderSection(s: GuidelinesSection, doc: GuidelinesDoc, srcOf: (r: Imag
     case "voice":
       return `<section class="gl-page" id="gl-${s.id}">${head(s, s.voice)}${s.sample ? `<blockquote class="gl-quote">${esc(s.sample)}<small>Sample copy</small></blockquote>` : ""}<div class="gl-grid gl-grid-2">${s.dos.length ? `<div><div class="gl-label">Do</div>${marks(s.dos, "do")}</div>` : ""}${s.donts.length ? `<div><div class="gl-label">Don't</div>${marks(s.donts, "dont")}</div>` : ""}</div></section>`;
     case "logo":
-      return `<section class="gl-page" id="gl-${s.id}">${head(s, s.concept)}${s.placeholder ? `<p class="gl-small gl-muted">The artwork below is a generated placeholder — the final logo replaces it automatically once it exists.</p>` : ""}<div class="gl-logo-grid">${s.variants.map((v) => `<div class="gl-logo-tile gl-avoid" data-surface="${v.surface}"><div class="gl-logo">${svgInline(v.svg)}</div><div class="gl-logo-caption"><span>${esc(v.label)}</span><span>${v.placeholder ? "placeholder" : "svg"}</span></div></div>`).join("")}</div><h3 class="gl-h3">Clearspace</h3><div class="gl-grid gl-grid-2 gl-avoid"><div class="gl-figure">${s.clearspace.svg}</div><p class="gl-prose">${esc(s.clearspace.description)}</p></div><h3 class="gl-h3">Minimum size</h3><div class="gl-grid gl-grid-2 gl-avoid"><div class="gl-figure gl-minsize"><div class="gl-minsize-item"><div class="gl-logo-min" style="height:${s.minSize.px}px">${s.minSize.svg}</div><span class="gl-caption">${s.minSize.px} px · screen</span></div><div class="gl-minsize-item"><div class="gl-logo-min" style="height:${s.minSize.mm}mm">${s.minSize.svg}</div><span class="gl-caption">${s.minSize.mm} mm · print</span></div></div><p class="gl-prose">Never reproduce the mark smaller than <strong>${s.minSize.px} px</strong> on screen or <strong>${s.minSize.mm} mm</strong> in print. Below these sizes detail is lost and the mark stops reading.</p></div>${s.usageRules.length || s.doNots.length ? `<h3 class="gl-h3">Usage</h3><div class="gl-grid gl-grid-2">${s.usageRules.length ? `<div><div class="gl-label">Rules</div>${marks(s.usageRules, "do")}</div>` : ""}${s.doNots.length ? `<div><div class="gl-label">Never</div>${marks(s.doNots, "dont")}</div>` : ""}</div>` : ""}</section>`;
+      return `<section class="gl-page" id="gl-${s.id}">${head(s, s.concept)}${s.placeholder ? `<p class="gl-small gl-muted">The artwork below is a generated placeholder — the final logo replaces it automatically once it exists.</p>` : ""}<div class="gl-logo-grid">${s.variants.map((v) => `<div class="gl-logo-tile gl-avoid" data-surface="${v.surface}"><div class="gl-logo">${svgInline(v.svg)}</div><div class="gl-logo-caption"><span>${esc(v.label)}</span><span>${v.placeholder ? "placeholder" : "svg"}</span></div></div>`).join("")}</div><h3 class="gl-h3">Clearspace</h3><div class="gl-grid gl-grid-2 gl-avoid"><div class="gl-figure">${svgInline(s.clearspace.svg)}</div><p class="gl-prose">${esc(s.clearspace.description)}</p></div><h3 class="gl-h3">Minimum size</h3><div class="gl-grid gl-grid-2 gl-avoid"><div class="gl-figure gl-minsize"><div class="gl-minsize-item"><div class="gl-logo-min" style="height:${s.minSize.px}px">${svgInline(s.minSize.svg)}</div><span class="gl-caption">${s.minSize.px} px · screen</span></div><div class="gl-minsize-item"><div class="gl-logo-min" style="height:${s.minSize.mm}mm">${svgInline(s.minSize.svg)}</div><span class="gl-caption">${s.minSize.mm} mm · print</span></div></div><p class="gl-prose">Never reproduce the mark smaller than <strong>${s.minSize.px} px</strong> on screen or <strong>${s.minSize.mm} mm</strong> in print. Below these sizes detail is lost and the mark stops reading.</p></div>${s.usageRules.length || s.doNots.length ? `<h3 class="gl-h3">Usage</h3><div class="gl-grid gl-grid-2">${s.usageRules.length ? `<div><div class="gl-label">Rules</div>${marks(s.usageRules, "do")}</div>` : ""}${s.doNots.length ? `<div><div class="gl-label">Never</div>${marks(s.doNots, "dont")}</div>` : ""}</div>` : ""}</section>`;
     case "color":
       return `<section class="gl-page" id="gl-${s.id}">${head(s, s.rationale)}<div class="gl-swatches">${s.swatches
         .map(

@@ -102,8 +102,17 @@ export function HexField({ value, onChange, className, id, ariaLabel }: { value:
       prefixed
       color={value}
       onChange={(v) => {
+        // Commit only complete 6-digit values while typing; 3-digit shorthand is expanded on blur.
+        if (v.replace(/^#/, "").length !== 6) return;
         const hex = normalizeHex(v);
         if (hex) onChange(hex);
+      }}
+      onBlur={(e) => {
+        const raw = e.currentTarget.value.replace(/^#/, "");
+        if (raw.length === 3) {
+          const hex = normalizeHex(raw);
+          if (hex) onChange(hex);
+        }
       }}
       className={cn(hexInputClass, className)}
       aria-label={ariaLabel ?? "Hex colour"}

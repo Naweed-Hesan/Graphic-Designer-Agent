@@ -71,7 +71,7 @@ export async function generateVideo(params: VideoGenParams, onStatus?: (msg: str
   return result;
 }
 
-export async function readNdjson(body: ReadableStream<Uint8Array>, onLine: (obj: unknown) => void): Promise<void> {
+export async function readNdjson(body: ReadableStream<Uint8Array>, onLine: (obj: unknown) => void | Promise<void>): Promise<void> {
   const reader = body.getReader();
   const dec = new TextDecoder();
   let buf = "";
@@ -83,17 +83,23 @@ export async function readNdjson(body: ReadableStream<Uint8Array>, onLine: (obj:
     buf = lines.pop() ?? "";
     for (const l of lines) {
       if (!l.trim()) continue;
+      let obj: unknown;
       try {
-        onLine(JSON.parse(l));
-      } catch (e) {
-        if (e instanceof Error && !(e instanceof SyntaxError)) throw e;
+        obj = JSON.parse(l);
+      } catch {
+        continue;
       }
+      await onLine(obj);
     }
   }
   if (buf.trim()) {
+    let obj: unknown;
     try {
-      onLine(JSON.parse(buf));
-    } catch {}
+      obj = JSON.parse(buf);
+    } catch {
+      return;
+    }
+    await onLine(obj);
   }
 }
 

@@ -135,7 +135,16 @@ export async function runGradio(opts: GradioRunOptions): Promise<GradioOutput> {
 
   const found = findFileOutput(data);
   if (!found) throw new ProviderError("hf-space", "Could not find an image/video in the Space output");
-  const res = await fetch(found.url, { headers: token ? { Authorization: `Bearer ${token}` } : undefined, signal: opts.signal });
+  const target = new URL(found.url);
+  const spaceOrigin = (() => {
+    try {
+      return new URL(client.config?.root ?? "").origin;
+    } catch {
+      return "";
+    }
+  })();
+  const trusted = /(^|\.)(huggingface\.co|hf\.space)$/i.test(target.hostname) || (spaceOrigin && target.origin === spaceOrigin);
+  const res = await fetch(found.url, { headers: token && trusted ? { Authorization: `Bearer ${token}` } : undefined, signal: opts.signal });
   if (!res.ok) throw new ProviderError("hf-space", `Failed to download output (${res.status})`);
   const bytes = Buffer.from(await res.arrayBuffer());
   const mime = res.headers.get("content-type")?.split(";")[0] || guessMime(found.url);

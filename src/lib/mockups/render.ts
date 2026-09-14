@@ -106,10 +106,29 @@ export async function prepareLogos(genome: Genome, assets: Asset[]): Promise<Sce
   const markSvg = variants.mark?.svg ?? variants.favicon?.svg ?? (placeholder ? placeholderMarkSvg(genome) : primaryArt.source === "wordmark" ? placeholderMarkSvg(genome) : primarySvg);
   const wordmarkSvg = variants.wordmark?.svg ?? (primaryArt.source === "wordmark" ? primarySvg : placeholderWordmarkSvg(genome, colors.primary));
 
-  const [primary, mark, wordmark] = await Promise.all([raster(primarySvg), raster(markSvg), raster(wordmarkSvg)]);
+  // A logo the browser cannot rasterise must not take the whole lab down: fall back to the generated placeholder.
+  const safeRaster = async (svg: string, fallback: string): Promise<[Drawable, string]> => {
+    try {
+      return [await raster(svg), svg];
+    } catch {
+      return [await raster(fallback), fallback];
+    }
+  };
+  const [[primary, primarySvgUsed], [mark, markSvgUsed], [wordmark, wordmarkSvgUsed]] = await Promise.all([
+    safeRaster(primarySvg, placeholderMarkSvg(genome)),
+    safeRaster(markSvg, placeholderMarkSvg(genome)),
+    safeRaster(wordmarkSvg, placeholderWordmarkSvg(genome, colors.primary)),
+  ]);
+  const rasterFailed = primarySvgUsed !== primarySvg || markSvgUsed !== markSvg || wordmarkSvgUsed !== wordmarkSvg;
 
   const mono = async (kind: LogoKind, base: Drawable, svgOfBase: string, color: string, projectSvg?: string): Promise<Drawable> => {
-    if (projectSvg) return raster(projectSvg);
+    if (projectSvg) {
+      try {
+        return await raster(projectSvg);
+      } catch {
+        /* fall through to the derived one-colour version */
+      }
+    }
     // Placeholders carry a filled tile; use initials only so they reproduce in one colour.
     if (placeholder || svgOfBase === placeholderMarkSvg(genome)) {
       if (kind === "wordmark") return raster(placeholderWordmarkSvg(genome, color));
@@ -119,9 +138,9 @@ export async function prepareLogos(genome: Genome, assets: Asset[]): Promise<Sce
   };
   const white = "#ffffff";
   const black = "#111111";
-  const monoLight = await mono("primary", primary, primarySvg, white, variants["mono-light"]?.svg);
-  const monoDark = await mono("primary", primary, primarySvg, black, variants["mono-dark"]?.svg);
-  const markIsPlaceholder = markSvg === placeholderMarkSvg(genome);
+  const monoLight = await mono("primary", primary, primarySvgUsed, white, variants["mono-light"]?.svg);
+  const monoDark = await mono("primary", primary, primarySvgUsed, black, variants["mono-dark"]?.svg);
+  const markIsPlaceholder = markSvgUsed === placeholderMarkSvg(genome);
   const wmIsPlaceholder = !variants.wordmark && primaryArt.source !== "wordmark";
   const monoMark = {
     light: markIsPlaceholder ? await raster(placeholderInitialsSvg(genome, white)) : monoArtwork(mark, white),
@@ -138,7 +157,7 @@ export async function prepareLogos(genome: Genome, assets: Asset[]): Promise<Sce
     monoDark,
     monoLight,
     mono: { primary: { light: monoLight, dark: monoDark }, mark: monoMark, wordmark: monoWordmark },
-    placeholder,
+    placeholder: placeholder || rasterFailed,
   };
 }
 

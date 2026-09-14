@@ -72,7 +72,8 @@ export function svgTextSize(svg: string): { width: number; height: number } {
 export async function fileToImageAsset(file: File): Promise<ImageFileInfo> {
   const mime = file.type || guessMime(file.name);
   if (mime === "image/svg+xml") {
-    const svg = await file.text();
+    const { sanitizeSvg } = await import("@/lib/logo/svg");
+    const svg = sanitizeSvg(await file.text());
     const { width, height } = svgTextSize(svg);
     return { blob: new Blob([svg], { type: mime }), name: file.name, mime, width, height, kind: "svg", svg };
   }

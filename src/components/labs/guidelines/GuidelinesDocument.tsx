@@ -6,9 +6,11 @@
 import * as React from "react";
 import type { GuidelinesDoc, GuidelinesSection, ContrastPair, ImageRef } from "@/lib/guidelines/model";
 import { easingCurveSvg, iconSamples, SPECIMEN_GLYPHS, SPECIMEN_FIGURES } from "@/lib/guidelines/html";
+import { sanitizeSvg } from "@/lib/logo/svg";
 
 function Svg({ svg, className, style }: { svg: string; className?: string; style?: React.CSSProperties }) {
-  return <div className={className} style={style} dangerouslySetInnerHTML={{ __html: svg }} />;
+  const safe = React.useMemo(() => sanitizeSvg(svg), [svg]);
+  return <div className={className} style={style} dangerouslySetInnerHTML={{ __html: safe }} />;
 }
 
 function Head({ s, lede }: { s: GuidelinesSection; lede?: string }) {
