@@ -1,0 +1,19 @@
+{
+  "name": "Ligature",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22", "pnpmVersion": "10" }
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Ligature", "onAutoForward": "openBrowser" }
+  },
+  "postCreateCommand": "corepack enable && pnpm install",
+  "postAttachCommand": "pnpm dev",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss"]
+    }
+  },
+  "hostRequirements": { "cpus": 4, "memory": "8gb" }
+}

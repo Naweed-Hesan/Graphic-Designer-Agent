@@ -66,12 +66,20 @@ Ligature never asks you to pay for a service. You choose which providers to enab
 
 > **About the Claude Agent SDK and your subscription.** Ligature runs the Agent SDK on *your* machine and never handles your credentials: it uses whatever the local Claude Code CLI is signed in with. Anthropic's help center confirmed on 15 June 2026 that Agent SDK usage, `claude -p`, and third-party apps built on the Agent SDK continue to draw from Pro/Max subscription limits. Ligature does not offer, proxy or resell claude.ai login; if you deploy Ligature for other people, they bring their own auth (or set an API key). Free tiers and terms change — check each provider's current page.
 
+## Try it
+
+| Route | What you get |
+|---|---|
+| [**Open in GitHub Codespaces**](https://github.com/codespaces/new?repo=Naweed-Hesan/Graphic-Designer-Agent&ref=claude/sleepy-sagan-p1eah2) | The full studio running in a cloud VM in about two minutes, nothing to install (free monthly hours on personal accounts). Ligature opens on the forwarded port 3000. |
+| [**Deploy to Vercel**](https://vercel.com/new/clone?repository-url=https://github.com/Naweed-Hesan/Graphic-Designer-Agent&project-name=ligature&repository-name=ligature) | A public URL on the free tier. Everything works except the Claude Agent SDK bridge (it needs a persistent Node process with Claude Code); use Pollinations, Gemini or Cloudflare there. Deploys the default branch, so merge first. |
+| **Run locally** | Best experience, and the only place the Creative Director can use your Claude Max login. See Quick start below. |
+
 ## Quick start
 
 Requirements: Node 20+ (22 recommended) and [pnpm](https://pnpm.io).
 
 ```bash
-git clone https://github.com/Naweed-Hesan/Graphic-Designer-Agent.git ligature
+git clone -b claude/sleepy-sagan-p1eah2 https://github.com/Naweed-Hesan/Graphic-Designer-Agent.git ligature
 cd ligature
 pnpm install
 pnpm dev
